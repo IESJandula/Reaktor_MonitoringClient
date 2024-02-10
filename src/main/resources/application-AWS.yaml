@@ -1,0 +1,7 @@
+server:
+  port: 8081
+reaktor:
+  server:
+    url: "http://localhost:80/"
+  computerOnReport: 5_000
+  malwareReport: 2_500

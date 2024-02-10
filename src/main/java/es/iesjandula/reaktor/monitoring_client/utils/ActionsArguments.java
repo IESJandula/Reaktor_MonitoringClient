@@ -1,5 +1,9 @@
 package es.iesjandula.reaktor.monitoring_client.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +40,10 @@ public class ActionsArguments
 		try
 		{	//Getting the configuration values from ParametersParser
 			//Calling to ParametersParser for check arguments
-			configuration=new ParametersParser().parse(args);
+		
+			String[] args2 = this.removeIfAwsParameterExists(args);
+			
+			configuration=new ParametersParser().parse(args2);
 		} 
 		catch (ParametersParserException excep)
 		{
@@ -52,6 +59,38 @@ public class ActionsArguments
         //Getting the configuration values and transform to JSON
         this.writeFiles.escribirResultadoJson(configuration);
     }
+
+    /**
+     * Method removeIfAwsParameterExists , metodo para borrar el parametro para el yaml de AWS
+     * @param args
+     * @return String[]
+     */
+	private String[] removeIfAwsParameterExists(String[] args) 
+	{
+		// Lista temporal para obtener los argumentos
+		List<String> temporalArgumentsList = new ArrayList<String>();
+		
+		// Bucle para borrar el parametro --spring.profiles.active=AWS si existe
+		for(int i = 0 ; i<args.length;i++) 
+		{
+			String arg = args[i];
+			if(!arg.equals("--spring.profiles.active=AWS")) 
+			{
+				temporalArgumentsList.add(arg);
+			}
+		}
+		
+		// Array para almacenar los argumentos otra vez
+		String[] args2 = new String[temporalArgumentsList.size()];
+		
+		
+		// Ponemos cada argumento en el array
+		for(int i = 0 ; i<temporalArgumentsList.size();i++) 
+		{
+			args2[i]=temporalArgumentsList.get(i); 
+		}
+		return args2;
+	}
     
     /**
      * Method checkConfiguration

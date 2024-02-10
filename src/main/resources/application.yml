@@ -1,6 +1,8 @@
+spring:
+  profiles:
+      active: default
 server:
-  port: 1563
-
+  port: 8081
 reaktor:
   server:
     url: "http://localhost:8084/"

@@ -1,9 +1,9 @@
 {
-  "classroom" : "David",
-  "teacher" : "test",
-  "trolley" : "Carrito 11",
-  "andaluciaId" : "3243-234David",
-  "computerNumber" : "5C",
-  "computerSerialNumber" : "serialNumbeeer",
+  "classroom" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
+  "teacher" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
+  "trolley" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
+  "andaluciaId" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
+  "computerNumber" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
+  "computerSerialNumber" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
   "isAdmin" : false
 }
