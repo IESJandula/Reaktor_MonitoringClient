@@ -28,6 +28,11 @@ public class ParametersParser
 	 */
 	private Option trolleyParameters;
 	
+	/**
+	 * Attribute descriptionParameters with the description parameters argument value
+	 */
+	private Option floorParameters;
+	
 	/** Attribute andaluciaIdParameters with the andaluciaId value*/
 	private Option andaluciaIdParameters;
 	
@@ -59,11 +64,12 @@ public class ParametersParser
 	public ParametersParser()
 	{
 		this.isAdmin = new Option(Constants.IS_ADMIN_PARAMETERS,Constants.IS_ADMIN_PARAMETERS_LONG, true, "The admin commands");
-		this.teacherParameters =  new Option(Constants.PROFESSOR_PARAMETERS, Constants.PROFESSOR_PARAMETERS_LONG,true, "The teacher parameters");
-		this.trolleyParameters = new Option(Constants.TROLLEY_PARAMETERS,Constants.TROLLEY_PARAMETERS_LONG, true, "the trolley parameters");
+		this.teacherParameters =  new Option(Constants.PROFESSOR_PARAMETERS, Constants.PROFESSOR_PARAMETERS_LONG,false, "The teacher parameters");
+		this.trolleyParameters = new Option(Constants.TROLLEY_PARAMETERS,Constants.TROLLEY_PARAMETERS_LONG, false, "the trolley parameters");
+		this.floorParameters = new Option(Constants.FLOOR_PARAMETERS,Constants.FLOOR_PARAMETERS_LONG, false, "the floor parameters");
 		this.andaluciaIdParameters = new Option(Constants.ANDALUCIA_ID_PARAMETERS,Constants.ANDALUCIA_ID_PARAMETERS_LONG, true, "the andalucia id parameters");
 		this.computerNumberParameters = new Option(Constants.COMPUTER_NUMBER_PARAMETERS,Constants.COMPUTER_NUMBER_PARAMETERS_LONG, true, "the computer number parameters");
-		this.classRoomParameters = new Option(Constants.CLASSROOM_PARAMETERS, Constants.CLASSROOM_PARAMETERS_LONG,true, "the classroom parameters");
+		this.classRoomParameters = new Option(Constants.CLASSROOM_PARAMETERS, Constants.CLASSROOM_PARAMETERS_LONG,false, "the classroom parameters");
 		this.computerSerialNumberParameters = new Option(Constants.COMPUTER_SERIAL_NUMBER_PARAMETERS, Constants.COMPUTER_SERIAL_NUMBER_PARAMETERS_LONG,true, "the computer serial number parameters");
 		this.helpParameter = new Option(Constants.HELP_PARAMETERS, Constants.HELP_PARAMETERS_LONG, false,"The show help parameter");
 		this.commandLine = null;
@@ -83,6 +89,7 @@ public class ParametersParser
 		// Add to the Options
 		allOptions.addOption(this.classRoomParameters);
 		allOptions.addOption(this.trolleyParameters);
+		allOptions.addOption(this.floorParameters);
 		allOptions.addOption(this.andaluciaIdParameters);
 		allOptions.addOption(this.computerNumberParameters);
 		allOptions.addOption(this.helpParameter);
@@ -105,6 +112,7 @@ public class ParametersParser
 		// Getting parameter values on Strings values
 		String classRoomParametersString = this.getCmdStringOption(this.classRoomParameters);
 		String trolleyParametersString = this.getCmdStringOption(this.trolleyParameters);
+		String floorParametersString = this.getCmdStringOption(this.floorParameters);
 		String andaluciaIdParametersString = this.getCmdStringOption(this.andaluciaIdParameters);
 		String computerNumberParametersString = this.getCmdStringOption(this.computerNumberParameters);
 		String computerSerialNumberParametersString = this.getCmdStringOption(this.computerSerialNumberParameters);
@@ -121,6 +129,9 @@ public class ParametersParser
 
 		// Checking descriptionParameters
 		this.checkingTrolley(trolleyParametersString, configuration);
+		
+		// Checking descriptionParameters
+		this.checkingFloor(floorParametersString, configuration);
 		
 		// Checking andaluciaParameters
 		this.checkingAndalucia(andaluciaIdParametersString, configuration);
@@ -250,6 +261,22 @@ public class ParametersParser
 		{
 			// Set the parameter
 			configuration.setTrolley(trolleyParameter);
+		}
+	}
+	
+	/**
+	 * 
+	 * Method checkingDescription for checking the argument
+	 * 
+	 * @param floorParameter with the String value
+	 * @param configuration the configuration for reaktor
+	 */
+	private void checkingFloor(String floorParameter, Configuration configuration)
+	{
+		if (floorParameter != null && !floorParameter.isEmpty())
+		{
+			// Set the parameter
+			configuration.setFloor(Integer.valueOf(floorParameter));
 		}
 	}
 

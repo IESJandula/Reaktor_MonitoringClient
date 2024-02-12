@@ -56,7 +56,7 @@ public class ReadFiles
         } catch (JsonProcessingException jsonProcessingException)
         {
             log.error("Error processing arguments to json document");
-            configuration = new Configuration("unknow","unknow","unknow","unknow","unknow","unknow",false);
+            configuration = new Configuration("unknow","unknow","unknow",0,"unknow","unknow","unknow",false);
         }
 
         return configuration;
