@@ -39,6 +39,7 @@ public final class Constants
     public static final String HELP_PARAMETERS /*................*/ = "h";
     public static final String CLASSROOM_PARAMETERS /*...........*/ = "a";
     public static final String TROLLEY_PARAMETERS /*...........*/ = "t";
+    public static final String FLOOR_PARAMETERS /*...........*/ = "f";
     public static final String ANDALUCIA_ID_PARAMETERS /*...........*/ = "aid";
     public static final String COMPUTER_NUMBER_PARAMETERS /*...........*/ = "cn";
     public static final String COMPUTER_SERIAL_NUMBER_PARAMETERS /*...........*/ = "sn";
@@ -53,6 +54,7 @@ public final class Constants
     public static final String HELP_PARAMETERS_LONG /*................*/ = "help";
     public static final String CLASSROOM_PARAMETERS_LONG /*...........*/ = "classroom";
     public static final String TROLLEY_PARAMETERS_LONG /*...........*/ = "trolley";
+    public static final String FLOOR_PARAMETERS_LONG /*...........*/ = "floor";
     public static final String ANDALUCIA_ID_PARAMETERS_LONG /*...........*/ = "andalucia";
     public static final String COMPUTER_NUMBER_PARAMETERS_LONG /*...........*/ = "computer";
     public static final String COMPUTER_SERIAL_NUMBER_PARAMETERS_LONG /*...........*/ = "serial";
