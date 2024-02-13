@@ -6,10 +6,8 @@ import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
-
-import javax.imageio.ImageIO;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -17,6 +15,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -30,21 +30,22 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
+import es.iesjandula.reaktor.models.Action;
 import es.iesjandula.reaktor.models.CommandLine;
 import es.iesjandula.reaktor.models.Computer;
 import es.iesjandula.reaktor.models.HardwareComponent;
 import es.iesjandula.reaktor.models.Location;
 import es.iesjandula.reaktor.models.MonitorizationLog;
-import es.iesjandula.reaktor.models.Peripheral;
 import es.iesjandula.reaktor.models.Software;
 import es.iesjandula.reaktor.models.Status;
+import es.iesjandula.reaktor.models.Task;
 import es.iesjandula.reaktor.models.monitoring.Actions;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientException;
+import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -55,7 +56,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class ComputerMonitorization
 {
-
 	/**
 	 * Method sendFullComputerTask scheduled task
 	 * 
@@ -136,9 +136,9 @@ public class ComputerMonitorization
 	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
 	public void sendStatusComputerTask() throws ReaktorClientException
 	{
-		List<Status> statusList = new ArrayList<>();
+		
 		String serialNumber = "sn123556";
-
+		Status status = new Status();
 		// --- CLOSEABLE HTTP ---
 		CloseableHttpClient httpClient = null;
 		CloseableHttpResponse response = null;
@@ -157,69 +157,46 @@ public class ComputerMonitorization
 			String responseString = EntityUtils.toString(response.getEntity());
 			log.info(responseString);
 
-			Actions actionsToDo = new ObjectMapper().readValue(responseString, Actions.class);
-
-			// --- SHUTDOWN ---
-			this.actionsShutdown(statusList, serialNumber, actionsToDo);
-			// --- RESTART ---
-			this.actionsRestart(statusList, serialNumber, actionsToDo);
-			// --- EXECUTE COMMANDS ---
-			this.actionsCommands(statusList, serialNumber, actionsToDo);
-			// --- BLOCK DISP ---
-			this.actionsBlockDisp(statusList, serialNumber, actionsToDo);
-			// --- OPEN WEBS ---
-			this.actionsOpenWeb(statusList, serialNumber, actionsToDo);
-			// --- INSTALL APPS ---
-			this.actionsInstallApps(statusList, serialNumber, actionsToDo);
-			// --- UNINSTALL APPS ---
-			this.actionsUninstallApps(statusList, serialNumber, actionsToDo);
-			// --- ADD CFG WIFI ---
-			this.actionsCfgWifiFile(statusList, serialNumber, actionsToDo);
-
-			//---- UPDATE ANDALUCIA - S/N - COMPUTER NUMBER SNAKE YAML START -----
-			// -- GETING THE MONITORIZATION YML , WITH THE INFO ---
-	        InputStream inputStream = new FileInputStream(new File("./src/main/resources/monitorization.yml"));
-			Yaml yaml = new Yaml();
+			Task actionsToDo = new ObjectMapper().readValue(responseString, Task.class);
 			
-			// --- LOADING THE INFO INTO STRING OBJECT MAP ---
-	        Map<String, Object> yamlMap = yaml.load(inputStream);
-	        
-	        // --- GETTING THE INFO INTO STRING STRING MAP (CAST)---
-            Map<String, String> computerMonitorizationYml = (Map<String, String>) yamlMap.get("ComputerMonitorization");
-
-            // --- LOG THE INFO FROM THE MAP ---
-            log.info("andaluciaId: " + computerMonitorizationYml.get("andaluciaId"));
-            log.info("computerNumber: " + computerMonitorizationYml.get("computerNumber"));
-            log.info("serialNumber: " + computerMonitorizationYml.get("serialNumber"));
-            //---- UPDATE ANDALUCIA - S/N - COMPUTER NUMBER SNAKE YAML END -----
-            
-            
-			// --- UPDATE ACTIONS ---
-			this.updateAndaluciaId(statusList, serialNumber, actionsToDo, computerMonitorizationYml);
-			this.updateComputerNumber(statusList, serialNumber, actionsToDo, computerMonitorizationYml);
-			this.updateSerialNumber(statusList, serialNumber, actionsToDo, computerMonitorizationYml);
+			try
+			{
+				String command;
+				if(System.getProperty("os.name").toLowerCase().contains("windows"))
+				{
+					command = actionsToDo.getAction().getCommandWindows();
+				}
+				else
+				{
+					command = actionsToDo.getAction().getCommandLinux();
+				}
+				
+				switch(actionsToDo.getAction().getName())
+				{
+					case "BlockUsbs":
+					{
+						
+					}
+					case "ConfigWifi":
+					{
+						
+					}
+					default:
+					{
+						log.info("Realizando el commando "+actionsToDo.getAction().getName());		
+						actionsToDo.setStatus(Action.STATUS_DONE);
+						sendStatus(serialNumber, actionsToDo, httpClient);
+						this.executeCommand(command, actionsToDo.getInfo());
+					}
+				}
+			}
+			catch (ComputerError exception) 
+			{
+				String error = "Error realizando la accion " + actionsToDo.getTaskId().getActionName();
+				log.error(error,exception);
+				actionsToDo.setStatus(Action.STATUS_FAILURE);
+			}
 			
-			// -- SAVING ALL MAP INFO INTO MONITORIZATION.YML ---
-			this.savingMonitorizationYmlCfg(computerMonitorizationYml);
-
-			// --- ENDPOINT TO SEND STATUS TO SERVER ---
-			log.info(statusList.toString());
-	
-			// GETTING NEW HTTP CLIENT
-			CloseableHttpClient httpClientStatus = HttpClients.createDefault();
-
-			// DO THE HTTP POST WITH PARAMETERS
-			HttpPost requestPost = new HttpPost("http://localhost:8084/computers/send/status");
-			requestPost.setHeader("Content-type", "application/json");
-			
-			// -- SETTING THE STATUS LIST ON PARAMETERS FOR POST PETITION ---
-			StringEntity statusListEntity = new StringEntity(new ObjectMapper().writeValueAsString(statusList));
-			requestPost.setEntity(statusListEntity);
-			requestPost.setHeader("serialNumber", serialNumber);
-			
-			CloseableHttpResponse responseStatus = httpClient.execute(requestPost);
-			
-
 		}
 		catch (JsonProcessingException exception)
 		{
@@ -250,6 +227,64 @@ public class ComputerMonitorization
 			this.closeHttpClientResponse(httpClient, response);
 		}
 
+	}
+
+	/**
+	 * @param serialNumber
+	 * @param status
+	 * @param httpClient
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws UnsupportedEncodingException
+	 * @throws JsonProcessingException
+	 * @throws ClientProtocolException
+	 */
+	private void sendStatus(String serialNumber, Task status, CloseableHttpClient httpClient)
+			throws FileNotFoundException, IOException, UnsupportedEncodingException, JsonProcessingException,
+			ClientProtocolException
+	{
+		//---- UPDATE ANDALUCIA - S/N - COMPUTER NUMBER SNAKE YAML START -----
+		// -- GETING THE MONITORIZATION YML , WITH THE INFO ---
+		InputStream inputStream = new FileInputStream(new File("./src/main/resources/monitorization.yml"));
+		Yaml yaml = new Yaml();
+		
+		// --- LOADING THE INFO INTO STRING OBJECT MAP ---
+		Map<String, Object> yamlMap = yaml.load(inputStream);
+		
+		// --- GETTING THE INFO INTO STRING STRING MAP (CAST)---
+		Map<String, String> computerMonitorizationYml = (Map<String, String>) yamlMap.get("ComputerMonitorization");
+
+		// --- LOG THE INFO FROM THE MAP ---
+		log.info("andaluciaId: " + computerMonitorizationYml.get("andaluciaId"));
+		log.info("computerNumber: " + computerMonitorizationYml.get("computerNumber"));
+		log.info("serialNumber: " + computerMonitorizationYml.get("serialNumber"));
+		//---- UPDATE ANDALUCIA - S/N - COMPUTER NUMBER SNAKE YAML END -----
+		
+		
+		// --- UPDATE ACTIONS ---
+//			this.updateAndaluciaId(statusList, serialNumber, actionsToDo, computerMonitorizationYml);
+//			this.updateComputerNumber(statusList, serialNumber, actionsToDo, computerMonitorizationYml);
+//			this.updateSerialNumber(statusList, serialNumber, actionsToDo, computerMonitorizationYml);
+//			
+		// -- SAVING ALL MAP INFO INTO MONITORIZATION.YML ---
+		this.savingMonitorizationYmlCfg(computerMonitorizationYml);
+
+		// --- ENDPOINT TO SEND STATUS TO SERVER ---
+		log.info(status.toString());
+
+		// GETTING NEW HTTP CLIENT
+		CloseableHttpClient httpClientStatus = HttpClients.createDefault();
+
+		// DO THE HTTP POST WITH PARAMETERS
+		HttpPost requestPost = new HttpPost("http://localhost:8084/computers/send/status");
+		requestPost.setHeader("Content-type", "application/json");
+		
+		// -- SETTING THE STATUS LIST ON PARAMETERS FOR POST PETITION ---
+		StringEntity statusEntity = new StringEntity(new ObjectMapper().writeValueAsString(status));
+		requestPost.setEntity(statusEntity);
+		requestPost.setHeader("serialNumber", serialNumber);
+		
+		CloseableHttpResponse responseStatus = httpClient.execute(requestPost);
 	}
 
 	
@@ -640,131 +675,6 @@ public class ComputerMonitorization
 	}
 
 	
-	/**
-	 * Method actionsOpenWeb
-	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
-	 */
-	private void actionsOpenWeb(List<Status> statusList, String serialNumber, Actions actionsToDo)
-	{
-		if (actionsToDo.getOpenWebs() != null && !actionsToDo.getOpenWebs().isEmpty())
-		{
-			try
-			{
-				for (String commandOpenWeb : actionsToDo.getOpenWebs())
-				{
-					log.info("cmd.exe /c " + commandOpenWeb);
-					Runtime rt = Runtime.getRuntime();
-					Process pr = rt.exec("cmd.exe /c " + commandOpenWeb);
-
-				}
-				Status status = new Status("Execute Web Commands " + serialNumber, true, null);
-				statusList.add(status);
-			}
-			catch (Exception exception)
-			{
-				Status status = new Status("Execute Commands " + serialNumber, false,
-						new ComputerError(333, "error on execute web command", null));
-				statusList.add(status);
-			}
-		}
-	}
-
-	/**
-	 * Method actionsBlockDisp
-	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
-	 */
-	private void actionsBlockDisp(List<Status> statusList, String serialNumber, Actions actionsToDo)
-	{
-		if (actionsToDo.getBlockDispositives() != null && !actionsToDo.getBlockDispositives().isEmpty())
-		{
-			try
-			{
-				List<Peripheral> blockDispositives = new ArrayList<Peripheral>();
-				for (int i = 0; i < actionsToDo.getBlockDispositives().size(); i++)
-				{
-					Peripheral peri = actionsToDo.getBlockDispositives().get(i);
-					peri.setOpen(false);
-					blockDispositives.add(peri);
-				}
-				log.info("DISPOSITIVES TO BLOCK : " + blockDispositives);
-
-				Status status = new Status("Dispotisive blocked " + serialNumber, true, null);
-				statusList.add(status);
-			}
-			catch (Exception exception)
-			{
-				Status status = new Status("Dispotisive blocked error " + serialNumber, false,
-						new ComputerError(121, "error on block", null));
-				statusList.add(status);
-			}
-		}
-	}
-
-	/**
-	 * Method actionsCommands
-	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
-	 */
-	private void actionsCommands(List<Status> statusList, String serialNumber, Actions actionsToDo)
-	{
-		if (actionsToDo.getCommands() != null && !actionsToDo.getCommands().isEmpty())
-		{
-			try
-			{
-				for (String command : actionsToDo.getCommands())
-				{
-					// --- GETTING COMMAND TO EXEC ---
-					log.info("cmd.exe /c " + command);
-					Runtime rt = Runtime.getRuntime();
-					Process pr = rt.exec("cmd.exe /c " + command);
-				}
-				Status status = new Status("Execute Commands " + serialNumber, true, null);
-				statusList.add(status);
-			}
-			catch (Exception exception)
-			{
-				Status status = new Status("Execute Commands " + serialNumber, false,
-						new ComputerError(111, "error on execute command", null));
-				statusList.add(status);
-			}
-		}
-	}
-
-	/**
-	 * Method actionsRestart
-	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
-	 */
-	private void actionsRestart(List<Status> statusList, String serialNumber, Actions actionsToDo)
-	{
-		if (actionsToDo.isRestart())
-		{
-			try
-			{
-				Runtime rt = Runtime.getRuntime();
-				Process pr = rt.exec("cmd.exe /c shutdown -r -t 61");
-
-				Status status = new Status("restart computer " + serialNumber, true, null);
-				statusList.add(status);
-			}
-			catch (Exception exception)
-			{
-				Status status = new Status("Restart computer " + serialNumber, false,
-						new ComputerError(002, "error on restart computer ", null));
-				statusList.add(status);
-			}
-		}
-	}
 
 	/**
 	 * Method actionsShutdown
@@ -772,26 +682,21 @@ public class ComputerMonitorization
 	 * @param statusList
 	 * @param serialNumber
 	 * @param actionsToDo
+	 * @throws ReaktorClientException 
 	 */
-	private void actionsShutdown(List<Status> statusList, String serialNumber, Actions actionsToDo)
-	{
-		if (actionsToDo.isShutdown())
+	private void executeCommand(String command, String info) throws ComputerError
+	{	
+		try
 		{
-			try
-			{
-				Runtime rt = Runtime.getRuntime();
-				Process pr = rt.exec("cmd.exe /c shutdown -s -t 61");
-
-				Status status = new Status("Shutdown computer " + serialNumber, true, null);
-				statusList.add(status);
-
-			}
-			catch (Exception exception)
-			{
-				Status status = new Status("Shutdown computer " + serialNumber, false,
-						new ComputerError(001, "error on Shutdown computer ", null));
-				statusList.add(status);
-			}
+			Runtime rt = Runtime.getRuntime();
+			Process pr = rt.exec("cmd.exe /c "+ command + " " + info);
 		}
+		catch (Exception exception)
+		{
+			String error = "Error ejecutando el comando " + command;
+			log.error(error,exception);
+			throw new ComputerError(1,error,exception);
+		}
+		
 	}
 }
