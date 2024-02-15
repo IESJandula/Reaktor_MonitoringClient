@@ -4,6 +4,7 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -171,7 +172,7 @@ public class ComputerMonitorization
 					case "screenshot" ->{}
 					case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
 					case "configWifi" ->this.actionsCfgWifiFile(task.getInfo());
-					case "downloadFile" ->{} //this.downloadFile(task, task.getInfo());
+					case "downloadFile" -> this.downloadFile(".\\files",task, task.getInfo());
 					default -> this.executeCommand(command, task.getInfo());
 				}
 				status.setStatus(true);
@@ -228,7 +229,7 @@ public class ComputerMonitorization
 	{
 		CloseableHttpClient httpClient = null;
 		CloseableHttpResponse response = null;
-		
+		InputStream inputStream = null;
 		try
 		{
 			// GETTING HTTP CLIENT
@@ -244,9 +245,9 @@ public class ComputerMonitorization
 			requestPost.setEntity(taskDTOListEntity);
 			response = httpClient.execute(requestPost);
 			
-			String responseString = response.getEntity().toString();
+			inputStream = response.getEntity().getContent();
 			
-			this.writeText(path, responseString.getBytes());
+			this.writeText(path + taskDTO.getInfo(), inputStream);
 		}
 		catch (IOException exception)
 		{
@@ -257,6 +258,19 @@ public class ComputerMonitorization
 		finally
 		{
 			this.closeHttpClientResponse(httpClient, response);
+			
+			if (inputStream != null)
+			{
+				try
+				{
+					inputStream.close();
+				} catch (IOException exception)
+				{
+					String error = "Error In Out Exception";
+					log.error(error, exception);
+					throw new ComputerError(1, error, exception);
+				}
+			}
 		}
 	}
 	
@@ -266,20 +280,22 @@ public class ComputerMonitorization
 	 * @param name
 	 * @param content
 	 */
-	public void writeText(String name, byte[] content)
+	public void writeText(String name, InputStream input)
 	{
 
 		FileOutputStream fileOutputStream = null;
 
 		DataOutputStream dataOutputStream = null;
-
+		DataInputStream dataInputStream = null;
 		try
 		{
 			fileOutputStream = new FileOutputStream(name);
 
 			dataOutputStream = new DataOutputStream(fileOutputStream);
+			
+			dataInputStream = new DataInputStream(input);
 
-			dataOutputStream.write(content);
+			dataOutputStream.write(dataInputStream.readAllBytes());
 
 			dataOutputStream.flush();
 
