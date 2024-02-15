@@ -173,7 +173,10 @@ public class ComputerMonitorization
 					}
 					case "ConfigWifi":
 					{
-						
+						log.info("Realizando configuracion de wifi "+actionsToDo.getAction().getName());
+						actionsToDo.setStatus(Action.STATUS_DONE);
+						sendStatus(serialNumber,actionsToDo,httpClient);
+						this.actionsCfgWifiFile(serialNumber, actionsToDo);
 					}
 					default:
 					{
@@ -288,15 +291,15 @@ public class ComputerMonitorization
 	 * @param serialNumber
 	 * @param actionsToDo
 	 */
-	private void actionsCfgWifiFile(List<Status> statusList, String serialNumber, Actions actionsToDo)
+	private void actionsCfgWifiFile(String serialNumber,Task task)
 	{
 		// --- IF THE STRING FILE IS NOT NULL OR EMPTY/BLANK ---
-		if (actionsToDo.getConfigurationWifi()!=null && !actionsToDo.getConfigurationWifi().isBlank() && !actionsToDo.getConfigurationWifi().isEmpty())
+		if(task.getAction().getName().equalsIgnoreCase("configWifi"))
 		{
 			try
 			{
+				File cfgFile = new File(task.getInfo());
 				// --- IF THE FILE EXISTS AND IS A FILE ---
-				File cfgFile = new File(actionsToDo.getConfigurationWifi());
 				if(cfgFile.exists() && cfgFile.isFile()) 
 				{
 					// --- RUN COMMAND ---
@@ -308,14 +311,12 @@ public class ComputerMonitorization
 					
 					// -- STATUD DONE --
 					Status status = new Status("ADD CFG WIFI exec " + serialNumber, true, null);
-					statusList.add(status);
 				}
 				else 
 				{
 					// --- ERROR ON FILE ---
 					Status status = new Status("ADD CFG WIFI Error " + serialNumber, false,
 							new ComputerError(666, "error CFG doesnt exist or is not a file", null));
-					statusList.add(status);
 				}	
 			}
 			catch (Exception exception)
@@ -323,7 +324,6 @@ public class ComputerMonitorization
 				// --- ERROR ON ACTION ---
 				Status status = new Status("ADD CFG WIFI Error " + serialNumber, false,
 						new ComputerError(666, "error on ADD CFG WIFI", null));
-				statusList.add(status);
 			}
 		}
 	}
