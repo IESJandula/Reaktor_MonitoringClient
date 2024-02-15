@@ -455,7 +455,7 @@ public class ComputerMonitorization
 	 * @throws ReaktorClientException
 	 */
 	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
-	public void getAndSendScreenshot() throws ReaktorClientException
+	public void getAndSendScreenshot(TaskDTO task) throws ReaktorClientException
 	{
 		String serialNumber = "sn123556";
 		CloseableHttpClient httpClient = null;
@@ -463,32 +463,16 @@ public class ComputerMonitorization
 
 		httpClient = HttpClients.createDefault();
 
-		HttpGet request = new HttpGet("http://localhost:8084/computers/get/screenshot");
+		HttpGet request = new HttpGet("http://localhost:8084/computers/send/screenshot");
 		request.setHeader("serialNumber", serialNumber);
+		request.setHeader("dateLong", String.valueOf(task.getDate().getTime()));
 
 		try
 		{
-			response = httpClient.execute(request);
-			String responseString = EntityUtils.toString(response.getEntity());
-			log.info(responseString);
-
-			if (responseString.equalsIgnoreCase("OK"))
-			{
-				try
-				{
-					BufferedImage image = new Robot()
-							.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
-
-					ImageIO.write(image, "PNG", new File("./screen.png")); // your image will be saved at this path
-
-				}
-				catch (Exception exception)
-				{
-					String error = "Error making the screenshot";
-					log.error(error, exception);
-					throw new ReaktorClientException(exception);
-				}
-			}
+			BufferedImage image = new Robot()
+					.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
+	
+			ImageIO.write(image, "PNG", new File("./screen.png")); // your image will be saved at this path				
 		}
 		catch (ClientProtocolException exception)
 		{
@@ -499,6 +483,12 @@ public class ComputerMonitorization
 		catch (IOException exception)
 		{
 			String error = "Error In Out Exception";
+			log.error(error, exception);
+			throw new ReaktorClientException(exception);
+		}
+		catch (Exception exception)
+		{
+			String error = "Error making the screenshot";
 			log.error(error, exception);
 			throw new ReaktorClientException(exception);
 		}
