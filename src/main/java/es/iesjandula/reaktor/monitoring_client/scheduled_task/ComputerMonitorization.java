@@ -4,9 +4,11 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -169,7 +171,7 @@ public class ComputerMonitorization
 					case "screenshot" ->{}
 					case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
 					case "configWifi" ->this.actionsCfgWifiFile(task.getInfo());
-					case "downloadFile" ->{}
+					case "downloadFile" ->{} //this.downloadFile(task, task.getInfo());
 					default -> this.executeCommand(command, task.getInfo());
 				}
 				status.setStatus(true);
@@ -220,6 +222,97 @@ public class ComputerMonitorization
 			this.closeHttpClientResponse(httpClient, response);
 		}
 
+	}
+	
+	private void downloadFile(String path, TaskDTO taskDTO, String serialNumber) throws ComputerError
+	{
+		CloseableHttpClient httpClient = null;
+		CloseableHttpResponse response = null;
+		
+		try
+		{
+			// GETTING HTTP CLIENT
+			httpClient = HttpClients.createDefault();
+			
+			// DO THE HTTP POST WITH PARAMETERS
+			HttpPost requestPost = new HttpPost("http://localhost:8084/computers/get/file");
+			requestPost.setHeader("Content-type", "application/json");
+			
+			// SET THE HEADER
+			requestPost.setHeader("serialNumber", serialNumber);
+			StringEntity taskDTOListEntity = new StringEntity(new ObjectMapper().writeValueAsString(taskDTO));
+			requestPost.setEntity(taskDTOListEntity);
+			response = httpClient.execute(requestPost);
+			
+			String responseString = response.getEntity().toString();
+			
+			this.writeText(path, responseString.getBytes());
+		}
+		catch (IOException exception)
+		{
+			String error = "Error In Out Exception";
+			log.error(error, exception);
+			throw new ComputerError(1, error, exception);
+		}
+		finally
+		{
+			this.closeHttpClientResponse(httpClient, response);
+		}
+	}
+	
+	/**
+	 * Method writeText
+	 * 
+	 * @param name
+	 * @param content
+	 */
+	public void writeText(String name, byte[] content)
+	{
+
+		FileOutputStream fileOutputStream = null;
+
+		DataOutputStream dataOutputStream = null;
+
+		try
+		{
+			fileOutputStream = new FileOutputStream(name);
+
+			dataOutputStream = new DataOutputStream(fileOutputStream);
+
+			dataOutputStream.write(content);
+
+			dataOutputStream.flush();
+
+		} catch (IOException exception)
+		{
+			String message = "Error";
+			log.error(message, exception);
+		} finally
+		{
+			if (dataOutputStream != null)
+			{
+				try
+				{
+					dataOutputStream.close();
+				} catch (IOException exception)
+				{
+					String message = "Error";
+					log.error(message, exception);
+				}
+			}
+
+			if (fileOutputStream != null)
+			{
+				try
+				{
+					fileOutputStream.close();
+				} catch (IOException exception)
+				{
+					String message = "Error";
+					log.error(message, exception);
+				}
+			}
+		}
 	}
 	
 	/**
