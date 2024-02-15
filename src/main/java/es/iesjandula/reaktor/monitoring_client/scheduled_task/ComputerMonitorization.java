@@ -224,7 +224,13 @@ public class ComputerMonitorization
 		}
 
 	}
-	
+	/**
+	 * Method that download a file
+	 * @param path
+	 * @param taskDTO
+	 * @param serialNumber
+	 * @throws ComputerError
+	 */
 	private void downloadFile(String path, TaskDTO taskDTO, String serialNumber) throws ComputerError
 	{
 		CloseableHttpClient httpClient = null;
