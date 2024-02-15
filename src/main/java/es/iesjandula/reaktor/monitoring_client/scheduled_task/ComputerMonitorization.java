@@ -134,96 +134,96 @@ public class ComputerMonitorization
 	 * 
 	 * @throws ReaktorClientException
 	 */
-	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
-	public void taskManager()
-	{
-		String serialNumber = "sn123556";
-
-		// --- CLOSEABLE HTTP ---
-		CloseableHttpClient httpClient = null;
-		CloseableHttpResponse response = null;
-
-		try
-		{
-			// GETTING HTTP CLIENT
-			httpClient = HttpClients.createDefault();
-
-			// DO THE HTTP GET WITH PARAMETERS
-			HttpGet request = new HttpGet("http://localhost:8084/computers/get/pendingActions");
-			request.setHeader("serialNumber", serialNumber);
-
-			response = httpClient.execute(request);
-
-			String responseString = EntityUtils.toString(response.getEntity());
-			log.info(responseString);
-
-			TaskDTO task = new ObjectMapper().readValue(responseString, TaskDTO.class);
-
-			String command = System.getProperty("os.name").toLowerCase().contains("windows") ? task.getCommandWindows() : task.getCommandLinux();
-			
-			Status status = new Status();
-			
-			try
-			{
-				switch(task.getName()) {
-					case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
-					case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
-					case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
-					case "screenshot" ->{}
-					case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
-					case "configWifi" ->this.actionsCfgWifiFile(task.getInfo());
-					case "downloadFile" -> this.downloadFile(".\\files",task, task.getInfo());
-					default -> this.executeCommand(command, task.getInfo());
-				}
-				status.setStatus(true);
-				status.setError(null);
-				status.setStatusInfo("task done succesfully");
-			} catch (ComputerError computerError)
-			{
-				status.setStatus(false);
-				status.setError(computerError);
-				status.setStatusInfo("Error doing task " + task.getName());
-			}
-			status.setTaskDTO(task);
-
-			// DO THE HTTP POST WITH PARAMETERS
-			HttpPost requestPost = new HttpPost("http://localhost:8084/computers/send/status");
-			requestPost.setHeader("Content-type", "application/json");
-			
-			// -- SETTING THE STATUS LIST ON PARAMETERS FOR POST PETITION ---
-			StringEntity statusListEntity = new StringEntity(new ObjectMapper().writeValueAsString(status));
-			requestPost.setEntity(statusListEntity);
-			requestPost.setHeader("serialNumber", serialNumber);
-			
-			httpClient.execute(requestPost);
-			
-		}
-		catch (JsonProcessingException exception)
-		{
-			String error = "Error Json Processing Exception";
-			log.error(error, exception);
-		}
-		catch (UnsupportedEncodingException exception)
-		{
-			String error = "Error Unsupported Encoding Exception";
-			log.error(error, exception);
-		}
-		catch (ClientProtocolException exception)
-		{
-			String error = "Error Client Protocol Exception";
-			log.error(error, exception);
-		}
-		catch (IOException exception)
-		{
-			String error = "Error In Out Exception";
-			log.error(error, exception);
-		}
-		finally
-		{
-			this.closeHttpClientResponse(httpClient, response);
-		}
-
-	}
+//	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
+//	public void taskManager()
+//	{
+//		String serialNumber = "sn123556";
+//
+//		// --- CLOSEABLE HTTP ---
+//		CloseableHttpClient httpClient = null;
+//		CloseableHttpResponse response = null;
+//
+//		try
+//		{
+//			// GETTING HTTP CLIENT
+//			httpClient = HttpClients.createDefault();
+//
+//			// DO THE HTTP GET WITH PARAMETERS
+//			HttpGet request = new HttpGet("http://localhost:8084/computers/get/pendingActions");
+//			request.setHeader("serialNumber", serialNumber);
+//
+//			response = httpClient.execute(request);
+//
+//			String responseString = EntityUtils.toString(response.getEntity());
+//			log.info(responseString);
+//
+//			TaskDTO task = new ObjectMapper().readValue(responseString, TaskDTO.class);
+//
+//			String command = System.getProperty("os.name").toLowerCase().contains("windows") ? task.getCommandWindows() : task.getCommandLinux();
+//			
+//			Status status = new Status();
+//			
+//			try
+//			{
+//				switch(task.getName()) {
+//					case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
+//					case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
+//					case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
+//					case "screenshot" ->{}
+//					case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
+//					case "configWifi" ->this.actionsCfgWifiFile(task.getInfo());
+//					case "downloadFile" -> this.downloadFile(".\\files",task, task.getInfo());
+//					default -> this.executeCommand(command, task.getInfo());
+//				}
+//				status.setStatus(true);
+//				status.setError(null);
+//				status.setStatusInfo("task done succesfully");
+//			} catch (ComputerError computerError)
+//			{
+//				status.setStatus(false);
+//				status.setError(computerError);
+//				status.setStatusInfo("Error doing task " + task.getName());
+//			}
+//			status.setTaskDTO(task);
+//
+//			// DO THE HTTP POST WITH PARAMETERS
+//			HttpPost requestPost = new HttpPost("http://localhost:8084/computers/send/status");
+//			requestPost.setHeader("Content-type", "application/json");
+//			
+//			// -- SETTING THE STATUS LIST ON PARAMETERS FOR POST PETITION ---
+//			StringEntity statusListEntity = new StringEntity(new ObjectMapper().writeValueAsString(status));
+//			requestPost.setEntity(statusListEntity);
+//			requestPost.setHeader("serialNumber", serialNumber);
+//			
+//			httpClient.execute(requestPost);
+//			
+//		}
+//		catch (JsonProcessingException exception)
+//		{
+//			String error = "Error Json Processing Exception";
+//			log.error(error, exception);
+//		}
+//		catch (UnsupportedEncodingException exception)
+//		{
+//			String error = "Error Unsupported Encoding Exception";
+//			log.error(error, exception);
+//		}
+//		catch (ClientProtocolException exception)
+//		{
+//			String error = "Error Client Protocol Exception";
+//			log.error(error, exception);
+//		}
+//		catch (IOException exception)
+//		{
+//			String error = "Error In Out Exception";
+//			log.error(error, exception);
+//		}
+//		finally
+//		{
+//			this.closeHttpClientResponse(httpClient, response);
+//		}
+//
+//	}
 	/**
 	 * Method that download a file
 	 * @param path
@@ -569,57 +569,57 @@ public class ComputerMonitorization
 	 * this method make a screenshot and send it 
 	 * @throws ReaktorClientException
 	 */
-	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
-	public void getAndSendScreenshot() throws ReaktorClientException
-	{
-		String serialNumber = "sn123556";
-		CloseableHttpClient httpClient = null;
-		CloseableHttpResponse response = null;
-
-		httpClient = HttpClients.createDefault();
-
-		HttpGet request = new HttpGet("http://localhost:8084/computers/get/screenshot");
-		request.setHeader("serialNumber", serialNumber);
-
-		try
-		{
-			response = httpClient.execute(request);
-			String responseString = EntityUtils.toString(response.getEntity());
-			log.info(responseString);
-
-			if (responseString.equalsIgnoreCase("OK"))
-			{
-				try
-				{
-					BufferedImage image = new Robot()
-							.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
-
-					ImageIO.write(image, "PNG", new File("./screen.png")); // your image will be saved at this path
-
-				}
-				catch (Exception exception)
-				{
-					String error = "Error making the screenshot";
-					log.error(error, exception);
-					throw new ReaktorClientException(exception);
-				}
-			}
-		}
-		catch (ClientProtocolException exception)
-		{
-			String error = "Client protocol error";
-			log.error(error, exception);
-			throw new ReaktorClientException(exception);
-		}
-		catch (IOException exception)
-		{
-			String error = "Error In Out Exception";
-			log.error(error, exception);
-			throw new ReaktorClientException(exception);
-		}
-		finally
-		{
-			closeHttpClientResponse(httpClient, response);
-		}
-	}
+//	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
+//	public void getAndSendScreenshot() throws ReaktorClientException
+//	{
+//		String serialNumber = "sn123556";
+//		CloseableHttpClient httpClient = null;
+//		CloseableHttpResponse response = null;
+//
+//		httpClient = HttpClients.createDefault();
+//
+//		HttpGet request = new HttpGet("http://localhost:8084/computers/get/screenshot");
+//		request.setHeader("serialNumber", serialNumber);
+//
+//		try
+//		{
+//			response = httpClient.execute(request);
+//			String responseString = EntityUtils.toString(response.getEntity());
+//			log.info(responseString);
+//
+//			if (responseString.equalsIgnoreCase("OK"))
+//			{
+//				try
+//				{
+//					BufferedImage image = new Robot()
+//							.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
+//
+//					ImageIO.write(image, "PNG", new File("./screen.png")); // your image will be saved at this path
+//
+//				}
+//				catch (Exception exception)
+//				{
+//					String error = "Error making the screenshot";
+//					log.error(error, exception);
+//					throw new ReaktorClientException(exception);
+//				}
+//			}
+//		}
+//		catch (ClientProtocolException exception)
+//		{
+//			String error = "Client protocol error";
+//			log.error(error, exception);
+//			throw new ReaktorClientException(exception);
+//		}
+//		catch (IOException exception)
+//		{
+//			String error = "Error In Out Exception";
+//			log.error(error, exception);
+//			throw new ReaktorClientException(exception);
+//		}
+//		finally
+//		{
+//			closeHttpClientResponse(httpClient, response);
+//		}
+//	}
 }

@@ -56,7 +56,7 @@ public class ActionsArguments
 
 		// Checking the configuration attribute values
 		this.checkConfiguration(configuration);
-		this.checkContentConfiguration(configuration);
+		//this.checkContentConfiguration(configuration);
 
 		// Getting the configuration values and transform to JSON
 		this.writeFiles.escribirResultadoJson(configuration);
@@ -146,6 +146,8 @@ public class ActionsArguments
 		{
 			configuration.setTeacher(Constants.UNKNOWN);
 		}
+		
+		configuration.setFloor(0);
 
 		if (configuration.getTrolley() == null || configuration.getTrolley().isEmpty())
 		{

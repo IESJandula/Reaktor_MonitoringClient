@@ -1,9 +1,10 @@
 {
-  "classroom" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "teacher" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "trolley" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "andaluciaId" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "computerNumber" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "computerSerialNumber" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "isAdmin" : false
+  "classroom" : "Unknown\\5d560d1c-c0e3-41c2-8db7-11eb054967db",
+  "teacher" : "Unknown\\5d560d1c-c0e3-41c2-8db7-11eb054967db",
+  "trolley" : "Unknown\\5d560d1c-c0e3-41c2-8db7-11eb054967db",
+  "floor" : 0,
+  "andaluciaId" : "a123",
+  "computerNumber" : "c123",
+  "computerSerialNumber" : "s123",
+  "isAdmin" : true
 }
