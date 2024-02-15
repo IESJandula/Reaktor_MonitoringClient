@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -26,6 +24,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
@@ -34,14 +33,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
-import es.iesjandula.reaktor.models.CommandLine;
-import es.iesjandula.reaktor.models.Computer;
-import es.iesjandula.reaktor.models.HardwareComponent;
-import es.iesjandula.reaktor.models.Location;
-import es.iesjandula.reaktor.models.MonitorizationLog;
-import es.iesjandula.reaktor.models.Software;
 import es.iesjandula.reaktor.models.Status;
 import es.iesjandula.reaktor.models.DTO.TaskDTO;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,20 +48,23 @@ import lombok.extern.slf4j.Slf4j;
 public class ComputerMonitorization
 {
 
+    /**
+     * - Attribute -
+     * this class is used to get the information of the Computer
+     */
+    @Autowired
+    private Reaktor reaktor;
+    
 	/**
 	 * Method sendFullComputerTask scheduled task
 	 * 
 	 * @throws ReaktorClientException
 	 */
-	@Scheduled(fixedDelayString = "5000", initialDelay = 2000)
+	@Scheduled(fixedDelayString = "10000", initialDelay = 2000)
 	public void sendFullComputerTask() throws ReaktorClientException
 	{
-		// THE COMPUTER FAKE FULL INFO STATUS
-		Computer computerInfoMob = new Computer("sn1234", "and123", "cn123", "windows", "paco",
-				new Location("0.5", 0, "trolley1"), new ArrayList<HardwareComponent>(),
-				new ArrayList<Software>(List.of(new Software("Virtual Box"), new Software("PokeGame"))),
-				new CommandLine(), new MonitorizationLog());
-
+		log.info("SENDING FULL INFO COMPUTER TO SERIALNUMBER -> "+this.reaktor.getMotherboard().getComputerSerialNumber());
+		
 		// Object mapper
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -77,9 +74,9 @@ public class ComputerMonitorization
 
 		try
 		{
-			// --- GETTING THE COMPUTER AS STRING ---
-			String computerString = mapper.writeValueAsString(computerInfoMob);
-			// GETTING COMPUTER AS STRING ENTITY
+			// --- GETTING THE REAKTOR OBJECT AS STRING ---
+			String computerString = mapper.writeValueAsString(this.reaktor);
+			// GETTING REAKTOR AS STRING ENTITY
 			StringEntity computerStringEntity = new StringEntity(computerString);
 
 			// GETTING HTTP CLIENT
@@ -88,7 +85,7 @@ public class ComputerMonitorization
 			// DO THE HTTP POST WITH PARAMETERS
 			HttpPost request = new HttpPost("http://localhost:8084/computers/send/fullInfo");
 			request.setHeader("Content-Type", "application/json");
-			request.setHeader("serialNumber", "sn1234");
+			request.setHeader("serialNumber", this.reaktor.getMotherboard().getComputerSerialNumber());
 			request.setEntity(computerStringEntity);
 
 			response = httpClient.execute(request);

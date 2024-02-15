@@ -3,11 +3,13 @@ package es.iesjandula.reaktor.monitoring_client.windows;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.SoundCard;
 import es.iesjandula.reaktor.models.Id.SoundCardId;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 import es.iesjandula.reaktor.monitoring_client.utils.CommandExecutor;
 import es.iesjandula.reaktor.monitoring_client.utils.Constants;
 import es.iesjandula.reaktor.monitoring_client.utils.StringsUtils;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ConstantsErrors;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientException;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import java.util.List;
 
 @Service
 @Slf4j
+@Data
 public class WindowsSoundCard
 {
     @Autowired

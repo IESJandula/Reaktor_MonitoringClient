@@ -1,9 +1,9 @@
 {
-  "classroom" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "teacher" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "trolley" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "andaluciaId" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "computerNumber" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "computerSerialNumber" : "Unknown\\800e5239-23b1-4cec-bacf-eb532f608e69",
-  "isAdmin" : false
+  "classroom" : "0.7",
+  "teacher" : "David",
+  "trolley" : "trolley1",
+  "andaluciaId" : "andaluciaId123",
+  "computerNumber" : "computerNumber12344",
+  "computerSerialNumber" : "serialNumber1231232",
+  "isAdmin" : true
 }

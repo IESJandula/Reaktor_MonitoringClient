@@ -118,10 +118,11 @@ public class ActionsArguments
 			}
 		} else
 		{
+			/*
 			if(configuration.getFloor() != null || configuration.getTrolley() != null || !configuration.getTrolley().isEmpty() ||
 					configuration.getClassroom() != null || !configuration.getClassroom().isEmpty()) {
 				throw new ReaktorClientException("4", "No teacher only");
-			}
+			}*/
 
 		}
 

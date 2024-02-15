@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import es.iesjandula.reaktor.models.HardDisk;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Id.HardDiskId;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
+import lombok.Data;
 import oshi.hardware.HWDiskStore;
 import oshi.hardware.platform.windows.WindowsHardwareAbstractionLayer;
 
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Data
 public class WindowsHardDisk
 {
 

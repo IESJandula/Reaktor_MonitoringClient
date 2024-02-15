@@ -5,9 +5,12 @@ import org.springframework.stereotype.Service;
 import es.iesjandula.reaktor.models.Cpu;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Id.CpuId;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
+import lombok.Data;
 import oshi.hardware.platform.windows.WindowsHardwareAbstractionLayer;
 
 @Service
+@Data
 public class WindowsCpu
 {
 

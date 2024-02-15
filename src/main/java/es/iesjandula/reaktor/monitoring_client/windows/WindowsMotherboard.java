@@ -2,6 +2,7 @@ package es.iesjandula.reaktor.monitoring_client.windows;
 
 import es.iesjandula.reaktor.models.Configuration;
 import es.iesjandula.reaktor.models.Motherboard;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 import es.iesjandula.reaktor.monitoring_client.utils.CommandExecutor;
 import es.iesjandula.reaktor.monitoring_client.utils.Constants;
 import es.iesjandula.reaktor.monitoring_client.utils.HttpCommunicationSender;
@@ -9,6 +10,7 @@ import es.iesjandula.reaktor.monitoring_client.utils.ReadFiles;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ConstantsErrors;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientException;
 import jakarta.annotation.PostConstruct;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,7 @@ import java.util.HashSet;
  */
 @Service
 @Slf4j
+@Data
 public final class WindowsMotherboard
 {
 

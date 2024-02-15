@@ -64,12 +64,12 @@ public class ParametersParser
 	public ParametersParser()
 	{
 		this.isAdmin = new Option(Constants.IS_ADMIN_PARAMETERS,Constants.IS_ADMIN_PARAMETERS_LONG, true, "The admin commands");
-		this.teacherParameters =  new Option(Constants.PROFESSOR_PARAMETERS, Constants.PROFESSOR_PARAMETERS_LONG,false, "The teacher parameters");
-		this.trolleyParameters = new Option(Constants.TROLLEY_PARAMETERS,Constants.TROLLEY_PARAMETERS_LONG, false, "the trolley parameters");
-		this.floorParameters = new Option(Constants.FLOOR_PARAMETERS,Constants.FLOOR_PARAMETERS_LONG, false, "the floor parameters");
+		this.teacherParameters =  new Option(Constants.PROFESSOR_PARAMETERS, Constants.PROFESSOR_PARAMETERS_LONG,true, "The teacher parameters");//FALSE
+		this.trolleyParameters = new Option(Constants.TROLLEY_PARAMETERS,Constants.TROLLEY_PARAMETERS_LONG, true, "the trolley parameters");//FALSE
+		this.floorParameters = new Option(Constants.FLOOR_PARAMETERS,Constants.FLOOR_PARAMETERS_LONG, true, "the floor parameters");//FALSE
 		this.andaluciaIdParameters = new Option(Constants.ANDALUCIA_ID_PARAMETERS,Constants.ANDALUCIA_ID_PARAMETERS_LONG, true, "the andalucia id parameters");
 		this.computerNumberParameters = new Option(Constants.COMPUTER_NUMBER_PARAMETERS,Constants.COMPUTER_NUMBER_PARAMETERS_LONG, true, "the computer number parameters");
-		this.classRoomParameters = new Option(Constants.CLASSROOM_PARAMETERS, Constants.CLASSROOM_PARAMETERS_LONG,false, "the classroom parameters");
+		this.classRoomParameters = new Option(Constants.CLASSROOM_PARAMETERS, Constants.CLASSROOM_PARAMETERS_LONG,true, "the classroom parameters");//FALSE
 		this.computerSerialNumberParameters = new Option(Constants.COMPUTER_SERIAL_NUMBER_PARAMETERS, Constants.COMPUTER_SERIAL_NUMBER_PARAMETERS_LONG,true, "the computer serial number parameters");
 		this.helpParameter = new Option(Constants.HELP_PARAMETERS, Constants.HELP_PARAMETERS_LONG, false,"The show help parameter");
 		this.commandLine = null;

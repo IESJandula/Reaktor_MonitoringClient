@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import es.iesjandula.reaktor.models.HardDisk;
 import es.iesjandula.reaktor.models.Partition;
 import es.iesjandula.reaktor.models.Id.PartitionId;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
+import lombok.Data;
 import oshi.hardware.HWDiskStore;
 import oshi.hardware.HWPartition;
 import oshi.hardware.platform.windows.WindowsHardwareAbstractionLayer;
@@ -15,6 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
+@Data
 public class WindowsPartitionHardDisk
 {
 

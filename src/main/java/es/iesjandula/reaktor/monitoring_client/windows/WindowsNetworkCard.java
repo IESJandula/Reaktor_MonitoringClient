@@ -3,8 +3,10 @@ package es.iesjandula.reaktor.monitoring_client.windows;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.NetworkCard;
 import es.iesjandula.reaktor.models.Id.NetworkCardId;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 import es.iesjandula.reaktor.monitoring_client.utils.CommandExecutor;
 import es.iesjandula.reaktor.monitoring_client.utils.StringsUtils;
+import lombok.Data;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Data
 public class WindowsNetworkCard
 {
     @Autowired

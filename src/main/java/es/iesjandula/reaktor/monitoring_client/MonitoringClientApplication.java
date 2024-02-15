@@ -2,6 +2,8 @@ package es.iesjandula.reaktor.monitoring_client;
 
 
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -9,6 +11,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 import es.iesjandula.reaktor.monitoring_client.utils.ActionsArguments;
@@ -94,6 +98,8 @@ public class MonitoringClientApplication implements CommandLineRunner
             
             // Send the update information to Server REAKTOR
             log.info("Sending information to server REAKTOR");
+            
+            
             this.httpCommunicationSender.sendPost(this.httpCommunicationSender.createHttpPostReaktor(this.reaktorServerUrl+"/reaktor", this.reaktor));
         }
         catch (ReaktorClientException reaktorClientException)
