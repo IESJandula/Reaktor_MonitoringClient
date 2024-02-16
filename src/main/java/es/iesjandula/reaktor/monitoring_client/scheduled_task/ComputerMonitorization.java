@@ -15,8 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -29,6 +27,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
@@ -37,16 +36,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
-import es.iesjandula.reaktor.models.CommandLine;
-import es.iesjandula.reaktor.models.Computer;
-import es.iesjandula.reaktor.models.HardwareComponent;
-import es.iesjandula.reaktor.models.Location;
-import es.iesjandula.reaktor.models.MonitorizationLog;
-import es.iesjandula.reaktor.models.Software;
 import es.iesjandula.reaktor.models.Status;
 import es.iesjandula.reaktor.models.DTO.TaskDTO;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientException;
 import lombok.extern.slf4j.Slf4j;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
+
 
 /**
  * @author David Martinez
@@ -57,20 +52,23 @@ import lombok.extern.slf4j.Slf4j;
 public class ComputerMonitorization
 {
 
+	 /**
+     * - Attribute -
+     * this class is used to get the information of the Computer
+     */
+    @Autowired
+    private Reaktor reaktor;
+    
 	/**
 	 * Method sendFullComputerTask scheduled task
 	 * 
 	 * @throws ReaktorClientException
 	 */
-	@Scheduled(fixedDelayString = "5000", initialDelay = 2000)
+	@Scheduled(fixedDelayString = "10000", initialDelay = 2000)
 	public void sendFullComputerTask() throws ReaktorClientException
 	{
-		// THE COMPUTER FAKE FULL INFO STATUS
-		Computer computerInfoMob = new Computer("sn1234", "and123", "cn123", "windows", "paco",
-				new Location("0.5", 0, "trolley1"), new ArrayList<HardwareComponent>(),
-				new ArrayList<Software>(List.of(new Software("Virtual Box"), new Software("PokeGame"))),
-				new CommandLine(), new MonitorizationLog());
-
+		log.info("SENDING FULL INFO COMPUTER TO SERIALNUMBER -> "+this.reaktor.getMotherboard().getComputerSerialNumber());
+		
 		// Object mapper
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -80,9 +78,22 @@ public class ComputerMonitorization
 
 		try
 		{
-			// --- GETTING THE COMPUTER AS STRING ---
-			String computerString = mapper.writeValueAsString(computerInfoMob);
-			// GETTING COMPUTER AS STRING ENTITY
+			es.iesjandula.reaktor.models.Reaktor reaktor = new es.iesjandula.reaktor.models.Reaktor() ;
+			reaktor.setCpu(this.reaktor.getCpu());
+			reaktor.setGraphicCard(this.reaktor.getGraphicCard());
+			reaktor.setHardDisk(this.reaktor.getHardDisk());
+			reaktor.setInternetConnection(this.reaktor.getInternetConnection());
+			reaktor.setMalware(this.reaktor.getMalware());
+			reaktor.setMotherboard(this.reaktor.getMotherboard());
+			reaktor.setNetworkCard(this.reaktor.getNetworkCard());
+			reaktor.setPartition(this.reaktor.getPartition());
+			reaktor.setRam(this.reaktor.getRam());
+			reaktor.setSoundCard(this.reaktor.getSoundCard());
+
+			// --- GETTING THE REAKTOR OBJECT AS STRING ---
+			String computerString = mapper.writeValueAsString(reaktor);
+			log.info(computerString);
+			// GETTING REAKTOR AS STRING ENTITY
 			StringEntity computerStringEntity = new StringEntity(computerString);
 
 			// GETTING HTTP CLIENT
@@ -91,7 +102,7 @@ public class ComputerMonitorization
 			// DO THE HTTP POST WITH PARAMETERS
 			HttpPost request = new HttpPost("http://localhost:8084/computers/send/fullInfo");
 			request.setHeader("Content-Type", "application/json");
-			request.setHeader("serialNumber", "sn1234");
+			request.setHeader("serialNumber", this.reaktor.getMotherboard().getComputerSerialNumber());
 			request.setEntity(computerStringEntity);
 
 			response = httpClient.execute(request);
@@ -137,7 +148,7 @@ public class ComputerMonitorization
 	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
 	public void taskManager()
 	{
-		String serialNumber = "sn123556";
+		String serialNumber = "5A59A1A8-079D-0000-0000-000000000000";
 
 		// --- CLOSEABLE HTTP ---
 		CloseableHttpClient httpClient = null;
@@ -157,46 +168,48 @@ public class ComputerMonitorization
 			String responseString = EntityUtils.toString(response.getEntity());
 			log.info(responseString);
 
-			TaskDTO task = new ObjectMapper().readValue(responseString, TaskDTO.class);
-
-			String command = System.getProperty("os.name").toLowerCase().contains("windows") ? task.getCommandWindows() : task.getCommandLinux();
-			
-			Status status = new Status();
-			
-			try
+			if (responseString != null && !responseString.isEmpty() && !responseString.isBlank())
+				
 			{
-				switch(task.getName()) {
-					case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
-					case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
-					case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
-					case "screenshot" ->{}
-					case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
-					case "configWifi" ->this.actionsCfgWifiFile(task.getInfo());
-					case "downloadFile" -> this.downloadFile(".\\files",task, task.getInfo());
-					default -> this.executeCommand(command, task.getInfo());
+				TaskDTO task = new ObjectMapper().readValue(responseString, TaskDTO.class);
+				String command = System.getProperty("os.name").toLowerCase().contains("windows") ? task.getCommandWindows() : task.getCommandLinux();
+				
+				Status status = new Status();
+				
+				try
+				{
+					switch(task.getName()) {
+						case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
+						case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
+						case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
+						case "screenshot" ->{}
+						case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
+						case "configWifi" ->this.actionsCfgWifiFile(task.getInfo());
+						case "downloadFile" -> this.downloadFile(".\\files",task, task.getInfo());
+						default -> this.executeCommand(command, task.getInfo());
+					}
+					status.setStatus(true);
+					status.setError(null);
+					status.setStatusInfo("task done succesfully");
+				} catch (ComputerError computerError)
+				{
+					status.setStatus(false);
+					status.setError(computerError);
+					status.setStatusInfo("Error doing task " + task.getName());
 				}
-				status.setStatus(true);
-				status.setError(null);
-				status.setStatusInfo("task done succesfully");
-			} catch (ComputerError computerError)
-			{
-				status.setStatus(false);
-				status.setError(computerError);
-				status.setStatusInfo("Error doing task " + task.getName());
-			}
-			status.setTaskDTO(task);
+				status.setTaskDTO(task);
 
-			// DO THE HTTP POST WITH PARAMETERS
-			HttpPost requestPost = new HttpPost("http://localhost:8084/computers/send/status");
-			requestPost.setHeader("Content-type", "application/json");
-			
-			// -- SETTING THE STATUS LIST ON PARAMETERS FOR POST PETITION ---
-			StringEntity statusListEntity = new StringEntity(new ObjectMapper().writeValueAsString(status));
-			requestPost.setEntity(statusListEntity);
-			requestPost.setHeader("serialNumber", serialNumber);
-			
-			httpClient.execute(requestPost);
-			
+				// DO THE HTTP POST WITH PARAMETERS
+				HttpPost requestPost = new HttpPost("http://localhost:8084/computers/send/status");
+				requestPost.setHeader("Content-type", "application/json");
+				
+				// -- SETTING THE STATUS LIST ON PARAMETERS FOR POST PETITION ---
+				StringEntity statusListEntity = new StringEntity(new ObjectMapper().writeValueAsString(status));
+				requestPost.setEntity(statusListEntity);
+				requestPost.setHeader("serialNumber", serialNumber);
+				
+				httpClient.execute(requestPost);
+			}
 		}
 		catch (JsonProcessingException exception)
 		{
@@ -569,7 +582,6 @@ public class ComputerMonitorization
 	 * this method make a screenshot and send it 
 	 * @throws ReaktorClientException
 	 */
-	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
 	public void getAndSendScreenshot(TaskDTO task) throws ReaktorClientException
 	{
 		String serialNumber = "sn123556";
