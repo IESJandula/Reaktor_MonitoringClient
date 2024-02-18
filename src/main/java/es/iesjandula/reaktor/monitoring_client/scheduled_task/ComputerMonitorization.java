@@ -82,6 +82,8 @@ public class ComputerMonitorization
 	@Scheduled(fixedDelayString = "10000", initialDelay = 2000)
 	public void sendFullComputerTask() throws ReaktorClientException
 	{
+		// -- UTILIZAMOS LA MISMA FORMA QUE LA PRIMERA ACTUALIZACION DEL PC , PARA
+		// VOLVER A ENVIAR PERIODICAMENTE ---
 		log.info("SENDING FULL INFO COMPUTER TO SERIALNUMBER -> "
 				+ this.reaktor.getMotherboard().getComputerSerialNumber());
 		this.httpCommunicationSender.sendPost(
@@ -109,53 +111,65 @@ public class ComputerMonitorization
 
 		try
 		{
+			// EJECUTAMOS Y SACAMOS EL RESPONSE
 			response = httpClient.execute(request);
 
+			// SACAMOS A STRING EL RESPONSE
 			String responseString = EntityUtils.toString(response.getEntity());
 
 			if (responseString != null && !responseString.isEmpty() && !responseString.isBlank())
-
 			{
-
 				try
 				{
+					// --- EVALUAMOS SI LA TAREA ES PARA WINDOWS O LINUX ---
 					TaskDTO task = new ObjectMapper().readValue(responseString, TaskDTO.class);
 					String command = System.getProperty("os.name").toLowerCase().contains("windows")
 							? task.getCommandWindows()
 							: task.getCommandLinux();
 
+					// CREAMOS UN OBJETO STATUS
 					Status status = new Status();
 
 					try
 					{
+						// EVALUAMOS SACANDO DE LA TASKDTO , EL NOMBRE DE LA TASK
+						// --- EVALUAMOS EL TIPO DE ACCION SEGUN SU NOMBRE ---
 						switch (task.getName())
 						{
-							case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
-							case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
-							case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
-							case "screenshot" -> this.getAndSendScreenshot(task);
-							case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
-							case "configWifi" -> this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
-							case "file" -> this.downloadFile("./", task, this.reaktor.getMotherboard().getComputerSerialNumber());
-							case "command" -> this.executeCommand(task.getInfo(), task.getInfo());
-							default -> this.executeCommand(command, task.getInfo());
+						case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
+						case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
+						case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
+						case "screenshot" -> this.getAndSendScreenshot(task);
+						case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
+						case "configWifi" -> this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
+						case "file" ->
+							this.downloadFile("./", task, this.reaktor.getMotherboard().getComputerSerialNumber());
+						case "command" -> this.executeCommand(task.getInfo(), task.getInfo());
+						default -> this.executeCommand(command, task.getInfo());
 						}
+						// --- EN ESTE PUNTO LA ACCION FUE EXITOSA , RELLENAMOS EL STATUS CON LOS DATOS
+						// A TRUE ---
 						status.setStatus(true);
 						status.setError(null);
 						status.setStatusInfo("task done succesfully");
 					}
 					catch (ComputerError computerError)
 					{
+						// --- EN ESTE PUNTO LA ACCION FUE NO EXITOSA , RELLENAMOS EL STATUS CON LOS
+						// DATOS A FALSE ---
 						status.setStatus(false);
 						status.setError(computerError);
 						status.setStatusInfo("Error doing task " + task.getName());
 					}
 					catch (Exception exception)
 					{
+						// --- EN ESTE PUNTO LA ACCION FUE NO EXITOSA , RELLENAMOS EL STATUS CON LOS
+						// DATOS A FALSE ---
 						status.setStatus(false);
 						status.setError(new ComputerError(400, "Error doing task", exception));
 						status.setStatusInfo("Error doing task " + task.getName());
 					}
+					// --- AGREGAMOS EL STATUS A LA TASK ---
 					status.setTaskDTO(task);
 
 					// DO THE HTTP POST WITH PARAMETERS
@@ -167,11 +181,14 @@ public class ComputerMonitorization
 					requestPost.setEntity(statusListEntity);
 					requestPost.setHeader("serialNumber", serialNumber);
 
+					// --- EJECUTAMOS LLAMADA ---
 					httpClient.execute(requestPost);
 				}
 				catch (IOException exception)
 				{
-					log.error(responseString);
+					// --- LOGEAMOS ERROR , NO LANZAMOS EXCEPTION , PARA NO ROMPER EL CLIENTE ----
+					String error = "Error on execute status petition post";
+					log.error(error, responseString, exception);
 				}
 			}
 		}
@@ -197,6 +214,7 @@ public class ComputerMonitorization
 		}
 		finally
 		{
+			// --- CERRAMOS ---
 			this.closeHttpClientResponse(httpClient, response);
 		}
 
@@ -228,10 +246,14 @@ public class ComputerMonitorization
 			requestPost.setHeader("serialNumber", serialNumber);
 			StringEntity taskDTOListEntity = new StringEntity(new ObjectMapper().writeValueAsString(taskDTO));
 			requestPost.setEntity(taskDTOListEntity);
+
+			// OBTENEMOS EL RESPONSE
 			response = httpClient.execute(requestPost);
 
+			// TRANSFORMAMOS A STREAM EL CONTENIDO DEL RESPONSE QUE SERA UN FILE
 			inputStream = response.getEntity().getContent();
 
+			// --- LLAMAMOS A WRITE TEXT QUE GUARDARA EL FICHERO CON SU PATH ---
 			this.writeText(path + taskDTO.getInfo(), inputStream);
 		}
 		catch (IOException exception)
@@ -269,20 +291,21 @@ public class ComputerMonitorization
 	public void writeText(String name, InputStream input)
 	{
 
+		// --- FLUJOS ---
 		FileOutputStream fileOutputStream = null;
-
 		DataOutputStream dataOutputStream = null;
 		DataInputStream dataInputStream = null;
 		try
 		{
+			// --- CREAMOS LOS FLUJOS ---
 			fileOutputStream = new FileOutputStream(name);
-
 			dataOutputStream = new DataOutputStream(fileOutputStream);
-
 			dataInputStream = new DataInputStream(input);
 
+			// TERMINAMOS CON LA LECTURA COMPLETA DE TODOS LOS BYTES
 			dataOutputStream.write(dataInputStream.readAllBytes());
 
+			// --- HACEMOS FLUSH --
 			dataOutputStream.flush();
 
 		}
@@ -293,6 +316,7 @@ public class ComputerMonitorization
 		}
 		finally
 		{
+			// --- CERRAMOS FLUJOS ---
 			if (dataOutputStream != null)
 			{
 				try
@@ -368,13 +392,6 @@ public class ComputerMonitorization
 	{
 		try
 		{
-//			List<Peripheral> blockDispositives = new ArrayList<Peripheral>();
-//			for (int i = 0; i < actionsToDo.getBlockDispositives().size(); i++)
-//			{
-//				Peripheral peri = actionsToDo.getBlockDispositives().get(i);
-//				peri.setOpen(false);
-//				blockDispositives.add(peri);
-//			}
 			log.info("DISPOSITIVES TO BLOCK : " + usbName);
 
 		}
@@ -398,7 +415,8 @@ public class ComputerMonitorization
 	{
 		try
 		{
-
+			// EJECUTAMOS COMANDO Y REEMPLAZAMOS EL PLACEHOLDER "INFO_INFO" POR LO QUE
+			// NECESITE LA TASK CON SU INFO ---
 			Runtime rt = Runtime.getRuntime();
 			rt.exec("cmd.exe /c " + command.replace("INFO_INFO", info));
 		}
@@ -421,10 +439,11 @@ public class ComputerMonitorization
 	{
 		try
 		{
-
-			downloadFile("./", taskDTO, serialNumber);
+			// --- LLAMAMOS A UN METODO PARA DESCARGAR UN FICHERO DEL SERVIDOR , EN ESTE
+			// CASO LE PONEMOS QUE GUARDARA EN LA RUTA ACTUAL ---
+			this.downloadFile("./", taskDTO, serialNumber);
 			// --- IF THE FILE EXISTS AND IS A FILE ---
-			executeCommand(taskDTO.getCommandWindows(), taskDTO.getInfo());
+			this.executeCommand(taskDTO.getCommandWindows(), taskDTO.getInfo());
 		}
 		catch (Exception exception)
 		{
@@ -468,6 +487,7 @@ public class ComputerMonitorization
 	{
 		try
 		{
+			// ACTUALIZAMOS YAML
 			Map<String, String> computerMonitorizationYml = this.openMap();
 			log.info("PDATE COMPUTER NUMBER ID");
 			computerMonitorizationYml.put("computerNumber", serialNumber);
@@ -494,6 +514,7 @@ public class ComputerMonitorization
 	{
 		try
 		{
+			// ACTUALIZAMOS YAML
 			Map<String, String> computerMonitorizationYml = this.openMap();
 			log.info("UPDATE ANDALUCIA ID");
 			computerMonitorizationYml.put("andaluciaId", id);
@@ -520,6 +541,7 @@ public class ComputerMonitorization
 	{
 		try
 		{
+			// ACTUALIZAMOS YAML
 			Map<String, String> computerMonitorizationYml = this.openMap();
 			log.info("UPDATE SERIAL NUMBER ID");
 			computerMonitorizationYml.put("serialNumber", serialNumber);
@@ -543,11 +565,16 @@ public class ComputerMonitorization
 	{
 		try
 		{
+			// SACAMOS EL YAML
 			InputStream inputStream = new FileInputStream(new File("./src/main/resources/monitorization.yml"));
+
+			// OBJETO YAML
 			Yaml yaml = new Yaml();
 
+			// -- EL MAPA CON LA INFO ---
 			Map<String, Object> yamlMap = yaml.load(inputStream);
 
+			// RETORNAMOS EL MAPA CASTEADO
 			return (Map<String, String>) yamlMap.get("ComputerMonitorization");
 		}
 		catch (FileNotFoundException e)
@@ -565,6 +592,7 @@ public class ComputerMonitorization
 	 */
 	public void getAndSendScreenshot(TaskDTO task) throws ReaktorClientException
 	{
+		// --- SACAMOS EL SERIALNUMBER Y DECLARAMOS VARIABLES ---
 		String serialNumber = this.reaktor.getMotherboard().getComputerSerialNumber();
 		CloseableHttpClient httpClient = null;
 		CloseableHttpResponse response = null;
@@ -573,10 +601,15 @@ public class ComputerMonitorization
 		{
 			httpClient = HttpClients.createDefault();
 
+			// PETICION POST
 			HttpPost request = new HttpPost("http://localhost:8084/computers/send/screenshot");
+
+			// HEADERS
 			request.setHeader("serialNumber", serialNumber);
 			request.setHeader("dateLong", String.valueOf(task.getDate().getTime()));
 
+			// UTILIZAMOS LA CLASE MultipartEntityBuilder PARA CREAR UN BUILDER DONDE
+			// PONDREMOS QUE SERA UN MULTIPART COMPATIBLE CON HTTP
 			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
 			builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 
@@ -587,9 +620,11 @@ public class ComputerMonitorization
 			// Y EL NOMBRE DEL FICHERO screen.png
 			builder.addBinaryBody("screenshot", imageBytes, ContentType.DEFAULT_BINARY, "screen.png");
 
+			// CREAMOS LA ENTITY CON EL BUILDER
 			HttpEntity entity = builder.build();
 			request.setEntity(entity);
 
+			// RECOGEMOS RESPUESTA Y EJECUTAMOS
 			response = httpClient.execute(request);
 		}
 		catch (ClientProtocolException exception)
