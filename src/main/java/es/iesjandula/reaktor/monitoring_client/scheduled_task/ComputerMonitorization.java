@@ -422,7 +422,7 @@ public class ComputerMonitorization
 		try
 		{
 
-			downloadFile(".\\confWIFI", taskDTO, serialNumber);
+			downloadFile("./", taskDTO, serialNumber);
 			// --- IF THE FILE EXISTS AND IS A FILE ---
 			executeCommand(taskDTO.getCommandWindows(), taskDTO.getInfo());
 		}
