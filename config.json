@@ -1,6 +1,6 @@
 {
-  "andaluciaId" : "1",
-  "computerNumber" : "1",
-  "computerSerialNumber" : "1",
+  "andaluciaId" : "andaluciaId123",
+  "computerNumber" : "computerNumber12344",
+  "computerSerialNumber" : "serialNumber1231232",
   "isAdmin" : true
 }
