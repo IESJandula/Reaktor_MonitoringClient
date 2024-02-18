@@ -15,20 +15,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
@@ -84,79 +90,7 @@ public class ComputerMonitorization
 	public void sendFullComputerTask() throws ReaktorClientException
 	{
 		log.info("SENDING FULL INFO COMPUTER TO SERIALNUMBER -> "+this.reaktor.getMotherboard().getComputerSerialNumber());
-		
-//		// Object mapper
-//		ObjectMapper mapper = new ObjectMapper();
-//
-//		// --- CLOSEABLE HTTP ---
-//		CloseableHttpClient httpClient = null;
-//		CloseableHttpResponse response = null;
-//
-//		try
-//		{
-//			es.iesjandula.reaktor.models.Reaktor reaktor = new es.iesjandula.reaktor.models.Reaktor() ;
-//			reaktor.setCpu(this.reaktor.getCpu());
-//			reaktor.setGraphicCard(this.reaktor.getGraphicCard());
-//			reaktor.setHardDisk(this.reaktor.getHardDisk());
-//			reaktor.setInternetConnection(this.reaktor.getInternetConnection());
-//			reaktor.setMalware(this.reaktor.getMalware());
-//			reaktor.setMotherboard(this.reaktor.getMotherboard());
-//			reaktor.setNetworkCard(this.reaktor.getNetworkCard());
-//			reaktor.setPartition(this.reaktor.getPartition());
-//			reaktor.setRam(this.reaktor.getRam());
-//			reaktor.setSoundCard(this.reaktor.getSoundCard());
-
-			// --- GETTING THE REAKTOR OBJECT AS STRING ---
-//			String computerString = mapper.writeValueAsString(reaktor);
-//			log.info(computerString);
-//			// GETTING REAKTOR AS STRING ENTITY
-//			StringEntity computerStringEntity = new StringEntity(computerString);
-//
-//			// GETTING HTTP CLIENT
-//			httpClient = HttpClients.createDefault();
-//
-//			// DO THE HTTP POST WITH PARAMETERS
-//			HttpPost request = new HttpPost("http://localhost:8084/computers/send/fullInfo");
-//			request.setHeader("Content-Type", "application/json");
-//			request.setHeader("serialNumber", this.reaktor.getMotherboard().getComputerSerialNumber());
-//			request.setEntity(computerStringEntity);
-//
-//			response = httpClient.execute(request);
-//
-//			String responseString = EntityUtils.toString(response.getEntity());
-//			log.info(responseString);
-			
-			this.httpCommunicationSender.sendPost(this.httpCommunicationSender.createHttpPostReaktor(this.reaktorServerUrl+"/reaktor", this.reaktor));
-			
-//		}
-//		catch (JsonProcessingException exception)
-//		{
-//			String error = "Error Json Processing Exception";
-//			log.error(error, exception);
-//			throw new ReaktorClientException(exception);
-//		}
-//		catch (UnsupportedEncodingException exception)
-//		{
-//			String error = "Error Unsupported Encoding Exception";
-//			log.error(error, exception);
-//			throw new ReaktorClientException(exception);
-//		}
-//		catch (ClientProtocolException exception)
-//		{
-//			String error = "Error Client Protocol Exception";
-//			log.error(error, exception);
-//			throw new ReaktorClientException(exception);
-//		}
-//		catch (IOException exception)
-//		{
-//			String error = "Error In Out Exception";
-//			log.error(error, exception);
-//			throw new ReaktorClientException(exception);
-//		}
-//		finally
-//		{
-//			closeHttpClientResponse(httpClient, response);
-//		}
+		this.httpCommunicationSender.sendPost(this.httpCommunicationSender.createHttpPostReaktor(this.reaktorServerUrl+"/reaktor", this.reaktor));
 	}
 
 	/**
@@ -204,7 +138,7 @@ public class ComputerMonitorization
 							case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
 							case "screenshot" ->{}
 							case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
-							case "configWifi" ->this.actionsCfgWifiFile(task.getInfo());
+							case "configWifi" ->this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
 							case "downloadFile" -> this.downloadFile(".\\files",task, task.getInfo());
 							default -> this.executeCommand(command, task.getInfo());
 						}
@@ -450,8 +384,9 @@ public class ComputerMonitorization
 	{	
 		try
 		{
+			
 			Runtime rt = Runtime.getRuntime();
-			rt.exec("cmd.exe /c "+ command + " " + info);
+			rt.exec("cmd.exe /c "+ command.replace("INFO_INFO", info));
 		}
 		catch (Exception exception)
 		{
@@ -467,15 +402,14 @@ public class ComputerMonitorization
 	 * @param actionsToDo
 	 * @throws ComputerError 
 	 */
-	private void actionsCfgWifiFile(String info) throws ComputerError
+	private void actionsCfgWifiFile(String info,TaskDTO taskDTO, String serialNumber) throws ComputerError
 	{
 		try
 		{
+			
+			downloadFile(".\\confWIFI", taskDTO, serialNumber);
 			// --- IF THE FILE EXISTS AND IS A FILE ---
-			File cfgFile = new File(info);
-			// --- RUN COMMAND ---	
-			log.info(" ADD CFG WIFI -- > cmd.exe /c "+cfgFile.getAbsolutePath());
-			Runtime.getRuntime().exec("cmd.exe /c netsh wlan add profile filename="+cfgFile.getAbsolutePath()+"");
+			executeCommand(taskDTO.getCommandWindows(), taskDTO.getInfo());
 		}
 		catch (Exception exception)
 		{
@@ -614,7 +548,7 @@ public class ComputerMonitorization
 
 		httpClient = HttpClients.createDefault();
 
-		HttpGet request = new HttpGet("http://localhost:8084/computers/send/screenshot");
+		HttpPost request = new HttpPost("http://localhost:8084/computers/send/screenshot");
 		request.setHeader("serialNumber", serialNumber);
 		request.setHeader("dateLong", String.valueOf(task.getDate().getTime()));
 
@@ -623,7 +557,16 @@ public class ComputerMonitorization
 			BufferedImage image = new Robot()
 					.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
 	
-			ImageIO.write(image, "PNG", new File("./screen.png")); // your image will be saved at this path				
+			ImageIO.write(image, "PNG", new File("./screen.png"));
+
+			request.setHeader("Content-type", MediaType.MULTIPART_FORM_DATA_VALUE);
+			request.setHeader("Content-Disposition", "attachment; filename=screen.png");
+			
+			File file = new File("./screen.png");
+			
+			FileEntity fileEntity = new FileEntity(file);
+			
+			request.setEntity(fileEntity);
 		}
 		catch (ClientProtocolException exception)
 		{
