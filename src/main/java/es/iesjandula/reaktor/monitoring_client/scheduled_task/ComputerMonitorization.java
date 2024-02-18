@@ -1,9 +1,5 @@
 package es.iesjandula.reaktor.monitoring_client.scheduled_task;
 
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -16,25 +12,26 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
-
-import javax.imageio.ImageIO;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.FileEntity;
-import org.apache.http.entity.HttpEntityWrapper;
+import org.apache.http.entity.ContentType;
+
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHttpEntityEnclosingRequest;
+
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
@@ -50,7 +47,6 @@ import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientExc
 import lombok.extern.slf4j.Slf4j;
 import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 
-
 /**
  * @author David Martinez
  *
@@ -60,27 +56,24 @@ import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 public class ComputerMonitorization
 {
 
-	 /**
-     * - Attribute -
-     * this class is used to get the information of the Computer
-     */
-    @Autowired
-    private Reaktor reaktor;
-    
-    /**
-     * - Attribute -
-     * This class is used to manage communications with the server.
-     */
-    @Autowired
-    private HttpCommunicationSender httpCommunicationSender;
+	/**
+	 * - Attribute - this class is used to get the information of the Computer
+	 */
+	@Autowired
+	private Reaktor reaktor;
 
-    /**
-     * - Attribute -
-     * This attrubte Storage the information about of Server URL
-     */
-    @Value("${reaktor.server.url}")
-    private String reaktorServerUrl;
-    
+	/**
+	 * - Attribute - This class is used to manage communications with the server.
+	 */
+	@Autowired
+	private HttpCommunicationSender httpCommunicationSender;
+
+	/**
+	 * - Attribute - This attrubte Storage the information about of Server URL
+	 */
+	@Value("${reaktor.server.url}")
+	private String reaktorServerUrl;
+
 	/**
 	 * Method sendFullComputerTask scheduled task
 	 * 
@@ -89,8 +82,10 @@ public class ComputerMonitorization
 	@Scheduled(fixedDelayString = "10000", initialDelay = 2000)
 	public void sendFullComputerTask() throws ReaktorClientException
 	{
-		log.info("SENDING FULL INFO COMPUTER TO SERIALNUMBER -> "+this.reaktor.getMotherboard().getComputerSerialNumber());
-		this.httpCommunicationSender.sendPost(this.httpCommunicationSender.createHttpPostReaktor(this.reaktorServerUrl+"/reaktor", this.reaktor));
+		log.info("SENDING FULL INFO COMPUTER TO SERIALNUMBER -> "
+				+ this.reaktor.getMotherboard().getComputerSerialNumber());
+		this.httpCommunicationSender.sendPost(
+				this.httpCommunicationSender.createHttpPostReaktor(this.reaktorServerUrl + "/reaktor", this.reaktor));
 	}
 
 	/**
@@ -101,7 +96,7 @@ public class ComputerMonitorization
 	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
 	public void taskManager()
 	{
-		String serialNumber = "A0DEC780-E8FC-11EC-8990-DBDF75B03300";
+		String serialNumber = this.reaktor.getMotherboard().getComputerSerialNumber();
 
 		// --- CLOSEABLE HTTP ---
 		CloseableHttpClient httpClient = null;
@@ -117,38 +112,48 @@ public class ComputerMonitorization
 			response = httpClient.execute(request);
 
 			String responseString = EntityUtils.toString(response.getEntity());
-			
 
 			if (responseString != null && !responseString.isEmpty() && !responseString.isBlank())
-				
+
 			{
-				
+
 				try
 				{
 					TaskDTO task = new ObjectMapper().readValue(responseString, TaskDTO.class);
-					String command = System.getProperty("os.name").toLowerCase().contains("windows") ? task.getCommandWindows() : task.getCommandLinux();
-					
+					String command = System.getProperty("os.name").toLowerCase().contains("windows")
+							? task.getCommandWindows()
+							: task.getCommandLinux();
+
 					Status status = new Status();
-					
+
 					try
 					{
-						switch(task.getName()) {
+						switch (task.getName())
+						{
 							case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
 							case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
 							case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
-							case "screenshot" ->{}
+							case "screenshot" -> this.getAndSendScreenshot(task);
 							case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
-							case "configWifi" ->this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
-							case "downloadFile" -> this.downloadFile(".\\files",task, task.getInfo());
+							case "configWifi" -> this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
+							case "file" -> this.downloadFile("./", task, this.reaktor.getMotherboard().getComputerSerialNumber());
+							case "command" -> this.executeCommand(task.getInfo(), task.getInfo());
 							default -> this.executeCommand(command, task.getInfo());
 						}
 						status.setStatus(true);
 						status.setError(null);
 						status.setStatusInfo("task done succesfully");
-					} catch (ComputerError computerError)
+					}
+					catch (ComputerError computerError)
 					{
 						status.setStatus(false);
 						status.setError(computerError);
+						status.setStatusInfo("Error doing task " + task.getName());
+					}
+					catch (Exception exception)
+					{
+						status.setStatus(false);
+						status.setError(new ComputerError(400, "Error doing task", exception));
 						status.setStatusInfo("Error doing task " + task.getName());
 					}
 					status.setTaskDTO(task);
@@ -156,14 +161,15 @@ public class ComputerMonitorization
 					// DO THE HTTP POST WITH PARAMETERS
 					HttpPost requestPost = new HttpPost("http://localhost:8084/computers/send/status");
 					requestPost.setHeader("Content-type", "application/json");
-					
+
 					// -- SETTING THE STATUS LIST ON PARAMETERS FOR POST PETITION ---
 					StringEntity statusListEntity = new StringEntity(new ObjectMapper().writeValueAsString(status));
 					requestPost.setEntity(statusListEntity);
 					requestPost.setHeader("serialNumber", serialNumber);
-					
+
 					httpClient.execute(requestPost);
-				} catch (IOException e)
+				}
+				catch (IOException exception)
 				{
 					log.error(responseString);
 				}
@@ -195,8 +201,10 @@ public class ComputerMonitorization
 		}
 
 	}
+
 	/**
 	 * Method that download a file
+	 * 
 	 * @param path
 	 * @param taskDTO
 	 * @param serialNumber
@@ -211,19 +219,19 @@ public class ComputerMonitorization
 		{
 			// GETTING HTTP CLIENT
 			httpClient = HttpClients.createDefault();
-			
+
 			// DO THE HTTP POST WITH PARAMETERS
 			HttpPost requestPost = new HttpPost("http://localhost:8084/computers/get/file");
 			requestPost.setHeader("Content-type", "application/json");
-			
+
 			// SET THE HEADER
 			requestPost.setHeader("serialNumber", serialNumber);
 			StringEntity taskDTOListEntity = new StringEntity(new ObjectMapper().writeValueAsString(taskDTO));
 			requestPost.setEntity(taskDTOListEntity);
 			response = httpClient.execute(requestPost);
-			
+
 			inputStream = response.getEntity().getContent();
-			
+
 			this.writeText(path + taskDTO.getInfo(), inputStream);
 		}
 		catch (IOException exception)
@@ -235,13 +243,14 @@ public class ComputerMonitorization
 		finally
 		{
 			this.closeHttpClientResponse(httpClient, response);
-			
+
 			if (inputStream != null)
 			{
 				try
 				{
 					inputStream.close();
-				} catch (IOException exception)
+				}
+				catch (IOException exception)
 				{
 					String error = "Error In Out Exception";
 					log.error(error, exception);
@@ -250,7 +259,7 @@ public class ComputerMonitorization
 			}
 		}
 	}
-	
+
 	/**
 	 * Method writeText
 	 * 
@@ -269,25 +278,28 @@ public class ComputerMonitorization
 			fileOutputStream = new FileOutputStream(name);
 
 			dataOutputStream = new DataOutputStream(fileOutputStream);
-			
+
 			dataInputStream = new DataInputStream(input);
 
 			dataOutputStream.write(dataInputStream.readAllBytes());
 
 			dataOutputStream.flush();
 
-		} catch (IOException exception)
+		}
+		catch (IOException exception)
 		{
 			String message = "Error";
 			log.error(message, exception);
-		} finally
+		}
+		finally
 		{
 			if (dataOutputStream != null)
 			{
 				try
 				{
 					dataOutputStream.close();
-				} catch (IOException exception)
+				}
+				catch (IOException exception)
 				{
 					String message = "Error";
 					log.error(message, exception);
@@ -299,7 +311,8 @@ public class ComputerMonitorization
 				try
 				{
 					fileOutputStream.close();
-				} catch (IOException exception)
+				}
+				catch (IOException exception)
 				{
 					String message = "Error";
 					log.error(message, exception);
@@ -307,9 +320,10 @@ public class ComputerMonitorization
 			}
 		}
 	}
-	
+
 	/**
 	 * Method closeHttpClientResponse
+	 * 
 	 * @param httpClient
 	 * @param response
 	 * @throws ReaktorClientException
@@ -341,14 +355,14 @@ public class ComputerMonitorization
 			}
 		}
 	}
-	
+
 	/**
 	 * Method actionsBlockDisp
 	 * 
 	 * @param statusList
 	 * @param serialNumber
 	 * @param actionsToDo
-	 * @throws ComputerError 
+	 * @throws ComputerError
 	 */
 	private void actionsBlockDisp(String usbName) throws ComputerError
 	{
@@ -367,46 +381,47 @@ public class ComputerMonitorization
 		catch (Exception exception)
 		{
 			String error = "Error bloqueando dispositivo";
-			log.error(error,exception);
-			throw new ComputerError(1,error,exception);
+			log.error(error, exception);
+			throw new ComputerError(1, error, exception);
 		}
 	}
-	
+
 	/**
 	 * Method actionsShutdown
 	 * 
 	 * @param statusList
 	 * @param serialNumber
 	 * @param actionsToDo
-	 * @throws ReaktorClientException 
+	 * @throws ReaktorClientException
 	 */
 	private void executeCommand(String command, String info) throws ComputerError
-	{	
+	{
 		try
 		{
-			
+
 			Runtime rt = Runtime.getRuntime();
-			rt.exec("cmd.exe /c "+ command.replace("INFO_INFO", info));
+			rt.exec("cmd.exe /c " + command.replace("INFO_INFO", info));
 		}
 		catch (Exception exception)
 		{
 			String error = "Error ejecutando el comando " + command;
-			log.error(error,exception);
-			throw new ComputerError(1,error,exception);
-		}	
+			log.error(error, exception);
+			throw new ComputerError(1, error, exception);
+		}
 	}
-	
+
 	/**
 	 * Method actionsCfgWifiFile
+	 * 
 	 * @param statusList
 	 * @param actionsToDo
-	 * @throws ComputerError 
+	 * @throws ComputerError
 	 */
-	private void actionsCfgWifiFile(String info,TaskDTO taskDTO, String serialNumber) throws ComputerError
+	private void actionsCfgWifiFile(String info, TaskDTO taskDTO, String serialNumber) throws ComputerError
 	{
 		try
 		{
-			
+
 			downloadFile(".\\confWIFI", taskDTO, serialNumber);
 			// --- IF THE FILE EXISTS AND IS A FILE ---
 			executeCommand(taskDTO.getCommandWindows(), taskDTO.getInfo());
@@ -414,42 +429,40 @@ public class ComputerMonitorization
 		catch (Exception exception)
 		{
 			String error = "Error configurando wifi";
-			log.error(error,exception);
-			throw new ComputerError(2,error,exception);
+			log.error(error, exception);
+			throw new ComputerError(2, error, exception);
 		}
 
 	}
 
-	
-
 	/**
 	 * Method savingMonitorizationYmlCfg
+	 * 
 	 * @param computerMonitorizationYml
 	 * @throws IOException
 	 */
 	private void savingMonitorizationYmlCfg(Map<String, String> computerMonitorizationYml) throws IOException
 	{
-		if(computerMonitorizationYml!=null) 
+		if (computerMonitorizationYml != null)
 		{
 			// --- OPCION RAW , NUEVO YML CON LA INFO ---
 			PrintWriter printWriter = new PrintWriter(new FileWriter("./src/main/resources/monitorization.yml"));
-			printWriter.print(
-						"ComputerMonitorization:\n"
-					+ "  andaluciaId: \""+computerMonitorizationYml.get("andaluciaId")+"\"\n"
-					+ "  computerNumber: \""+computerMonitorizationYml.get("computerNumber")+"\"\n"
-					+ "  serialNumber: \"sn12345577\"");
+			printWriter.print("ComputerMonitorization:\n" + "  andaluciaId: \""
+					+ computerMonitorizationYml.get("andaluciaId") + "\"\n" + "  computerNumber: \""
+					+ computerMonitorizationYml.get("computerNumber") + "\"\n" + "  serialNumber: \"sn12345577\"");
 			printWriter.flush();
 			printWriter.close();
 		}
 	}
-	
+
 	/**
 	 * Method updateComputerNumber
+	 * 
 	 * @param statusList
 	 * @param serialNumber
 	 * @param actionsToDo
 	 * @param computerMonitorizationYml
-	 * @throws ComputerError 
+	 * @throws ComputerError
 	 */
 	private void updateComputerNumber(String serialNumber) throws ComputerError
 	{
@@ -463,17 +476,19 @@ public class ComputerMonitorization
 		catch (Exception exception)
 		{
 			String error = "Error cambiando ComputerNumber";
-			log.error(error,exception);
-			throw new ComputerError(2,error,exception);
+			log.error(error, exception);
+			throw new ComputerError(2, error, exception);
 		}
 	}
+
 	/**
 	 * Method updateAndaluciaId
+	 * 
 	 * @param statusList
 	 * @param serialNumber
 	 * @param actionsToDo
 	 * @param computerMonitorizationYml
-	 * @throws ComputerError 
+	 * @throws ComputerError
 	 */
 	private void updateAndaluciaId(String id) throws ComputerError
 	{
@@ -487,18 +502,19 @@ public class ComputerMonitorization
 		catch (Exception exception)
 		{
 			String error = "Error cambiando AndaluciaID";
-			log.error(error,exception);
-			throw new ComputerError(1,error,exception);
+			log.error(error, exception);
+			throw new ComputerError(1, error, exception);
 		}
 	}
 
 	/**
 	 * Method updateSerialNumber
+	 * 
 	 * @param statusList
 	 * @param serialNumber
 	 * @param actionsToDo
 	 * @param computerMonitorizationYml
-	 * @throws ComputerError 
+	 * @throws ComputerError
 	 */
 	private void updateSerialNumber(String serialNumber) throws ComputerError
 	{
@@ -512,61 +528,69 @@ public class ComputerMonitorization
 		catch (Exception exception)
 		{
 			String error = "Error cambiando ComputerNumber";
-			log.error(error,exception);
-			throw new ComputerError(2,error,exception);
-		}
-	}
-	
-	private Map<String, String> openMap() throws ComputerError 
-	{	
-        try
-		{
-        	InputStream inputStream = new FileInputStream(new File("./src/main/resources/monitorization.yml"));
-    		Yaml yaml = new Yaml();
-    		
-            Map<String, Object> yamlMap = yaml.load(inputStream);
-            
-
-            return (Map<String, String>) yamlMap.get("ComputerMonitorization");
-		} catch (FileNotFoundException e)
-		{
-			String error = "Error configurando wifi";
-			log.error(error,e);
-			throw new ComputerError(2,error,e);
+			log.error(error, exception);
+			throw new ComputerError(2, error, exception);
 		}
 	}
 
 	/**
-	 * this method make a screenshot and send it 
+	 * Method openMap
+	 * 
+	 * @return
+	 * @throws ComputerError
+	 */
+	private Map<String, String> openMap() throws ComputerError
+	{
+		try
+		{
+			InputStream inputStream = new FileInputStream(new File("./src/main/resources/monitorization.yml"));
+			Yaml yaml = new Yaml();
+
+			Map<String, Object> yamlMap = yaml.load(inputStream);
+
+			return (Map<String, String>) yamlMap.get("ComputerMonitorization");
+		}
+		catch (FileNotFoundException e)
+		{
+			String error = "Error configurando wifi";
+			log.error(error, e);
+			throw new ComputerError(2, error, e);
+		}
+	}
+
+	/**
+	 * this method make a screenshot and send it
+	 * 
 	 * @throws ReaktorClientException
 	 */
 	public void getAndSendScreenshot(TaskDTO task) throws ReaktorClientException
 	{
-		String serialNumber = "sn123556";
+		String serialNumber = this.reaktor.getMotherboard().getComputerSerialNumber();
 		CloseableHttpClient httpClient = null;
 		CloseableHttpResponse response = null;
 
-		httpClient = HttpClients.createDefault();
-
-		HttpPost request = new HttpPost("http://localhost:8084/computers/send/screenshot");
-		request.setHeader("serialNumber", serialNumber);
-		request.setHeader("dateLong", String.valueOf(task.getDate().getTime()));
-
 		try
 		{
-			BufferedImage image = new Robot()
-					.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
-	
-			ImageIO.write(image, "PNG", new File("./screen.png"));
+			httpClient = HttpClients.createDefault();
 
-			request.setHeader("Content-type", MediaType.MULTIPART_FORM_DATA_VALUE);
-			request.setHeader("Content-Disposition", "attachment; filename=screen.png");
-			
-			File file = new File("./screen.png");
-			
-			FileEntity fileEntity = new FileEntity(file);
-			
-			request.setEntity(fileEntity);
+			HttpPost request = new HttpPost("http://localhost:8084/computers/send/screenshot");
+			request.setHeader("serialNumber", serialNumber);
+			request.setHeader("dateLong", String.valueOf(task.getDate().getTime()));
+
+			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+			builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+
+			// RECOGEMOS COMO ARRAY DE BYTES Y PONEMOS BINARY BODY
+			byte[] imageBytes = Files.readAllBytes(Paths.get("./screen.png"));
+
+			// SE PONE EL NOMBRE , screenshot, PONEMOS EL ARRAY DE BYTES , EL TIPO EN BINERY
+			// Y EL NOMBRE DEL FICHERO screen.png
+			builder.addBinaryBody("screenshot", imageBytes, ContentType.DEFAULT_BINARY, "screen.png");
+
+			HttpEntity entity = builder.build();
+			request.setEntity(entity);
+
+			response = httpClient.execute(request);
 		}
 		catch (ClientProtocolException exception)
 		{
@@ -590,5 +614,6 @@ public class ComputerMonitorization
 		{
 			closeHttpClientResponse(httpClient, response);
 		}
+
 	}
 }
