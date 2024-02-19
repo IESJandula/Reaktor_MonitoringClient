@@ -1,5 +1,9 @@
 package es.iesjandula.reaktor.monitoring_client.scheduled_task;
 
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -15,23 +19,22 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
-
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
@@ -42,10 +45,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Status;
 import es.iesjandula.reaktor.models.DTO.TaskDTO;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 import es.iesjandula.reaktor.monitoring_client.utils.HttpCommunicationSender;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientException;
 import lombok.extern.slf4j.Slf4j;
-import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 
 /**
  * @author David Martinez
@@ -188,7 +191,7 @@ public class ComputerMonitorization
 				{
 					// --- LOGEAMOS ERROR , NO LANZAMOS EXCEPTION , PARA NO ROMPER EL CLIENTE ----
 					String error = "Error on execute status petition post";
-					log.error(error, responseString, exception);
+					log.error(responseString);
 				}
 			}
 		}
@@ -599,6 +602,12 @@ public class ComputerMonitorization
 
 		try
 		{
+			
+			BufferedImage image = new Robot()
+					.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
+
+			ImageIO.write(image, "PNG", new File("./screen.png"));
+			
 			httpClient = HttpClients.createDefault();
 
 			// PETICION POST
