@@ -139,16 +139,16 @@ public class ComputerMonitorization
 						// --- EVALUAMOS EL TIPO DE ACCION SEGUN SU NOMBRE ---
 						switch (task.getName())
 						{
-						case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
-						case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
-						case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
-						case "screenshot" -> this.getAndSendScreenshot(task);
-						case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
-						case "configWifi" -> this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
-						case "file" ->
-							this.downloadFile("./", task, this.reaktor.getMotherboard().getComputerSerialNumber());
-						case "command" -> this.executeCommand(task.getInfo(), task.getInfo());
-						default -> this.executeCommand(command, task.getInfo());
+							case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
+							case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
+							case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
+							case "screenshot" -> this.getAndSendScreenshot(task);
+							case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
+							case "configWifi" -> this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
+							case "file" ->
+								this.downloadFile("./", task, this.reaktor.getMotherboard().getComputerSerialNumber());
+							case "command" -> this.executeCommand(task.getInfo(), task.getInfo());
+							default -> this.executeCommand(command, task.getInfo());
 						}
 						// --- EN ESTE PUNTO LA ACCION FUE EXITOSA , RELLENAMOS EL STATUS CON LOS DATOS
 						// A TRUE ---
@@ -444,7 +444,7 @@ public class ComputerMonitorization
 		{
 			// --- LLAMAMOS A UN METODO PARA DESCARGAR UN FICHERO DEL SERVIDOR , EN ESTE
 			// CASO LE PONEMOS QUE GUARDARA EN LA RUTA ACTUAL ---
-			this.downloadFile("./", taskDTO, serialNumber);
+			this.downloadFile("", taskDTO, serialNumber);
 			// --- IF THE FILE EXISTS AND IS A FILE ---
 			this.executeCommand(taskDTO.getCommandWindows(), taskDTO.getInfo());
 		}
