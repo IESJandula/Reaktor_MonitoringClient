@@ -1,1 +1,10 @@
-{"classroom":"0.7","teacher":"David","trolley":"trolley1","floor":null,"andaluciaId":"andaluciaId123","computerNumber":"computttteee111111","serialNumber":"5A59A1A8-CFA5-0000-0000-000000000000","computerSerialNumber":"1231231231312","isAdmin":true}
+{
+  "classroom" : "0.7",
+  "teacher" : "David",
+  "trolley" : "trolley1",
+  "andaluciaId" : "andaluciaId123",
+  "computerNumber" : "computerNumber12344",
+  "serialNumber" : "06D68B17-67A4-B618-A410-00D861C95043",
+  "computerSerialNumber" : "123",
+  "isAdmin" : true
+}
