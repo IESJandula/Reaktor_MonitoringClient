@@ -7,17 +7,12 @@ import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -37,12 +32,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.Yaml;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
+import es.iesjandula.reaktor.models.Configuration;
 import es.iesjandula.reaktor.models.Status;
 import es.iesjandula.reaktor.models.DTO.TaskDTO;
 import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
@@ -76,6 +70,12 @@ public class ComputerMonitorization
 	 */
 	@Value("${reaktor.server.url}")
 	private String reaktorServerUrl;
+	
+	/**
+	 * - Attribute - This attrubte Storage the information about of Server URL
+	 */
+	@Value("${reaktor.configFile}")
+	private String fileConfig;
 
 	/**
 	 * Method sendFullComputerTask scheduled task
@@ -137,11 +137,20 @@ public class ComputerMonitorization
 					{
 						// EVALUAMOS SACANDO DE LA TASKDTO , EL NOMBRE DE LA TASK
 						// --- EVALUAMOS EL TIPO DE ACCION SEGUN SU NOMBRE ---
+						
+						
 						switch (task.getName())
 						{
 							case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
 							case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
 							case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
+							
+							case "updateTeacher" -> this.updateTeacher(task.getInfo());
+							case "updateTrolley" -> this.updateTrolley(task.getInfo());
+							case "updateClassroom" -> this.updateClassroom(task.getInfo());
+							case "updateFloor" -> this.updateFloor(task.getInfo());
+							case "updateAdmin" -> this.updateAdmin(task.getInfo());
+							
 							case "screenshot" -> this.getAndSendScreenshot(task);
 							case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
 							case "configWifi" -> this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
@@ -457,25 +466,6 @@ public class ComputerMonitorization
 
 	}
 
-	/**
-	 * Method savingMonitorizationYmlCfg
-	 * 
-	 * @param computerMonitorizationYml
-	 * @throws IOException
-	 */
-	private void savingMonitorizationYmlCfg(Map<String, String> computerMonitorizationYml) throws IOException
-	{
-		if (computerMonitorizationYml != null)
-		{
-			// --- OPCION RAW , NUEVO YML CON LA INFO ---
-			PrintWriter printWriter = new PrintWriter(new FileWriter("./src/main/resources/monitorization.yml"));
-			printWriter.print("ComputerMonitorization:\n" + "  andaluciaId: \""
-					+ computerMonitorizationYml.get("andaluciaId") + "\"\n" + "  computerNumber: \""
-					+ computerMonitorizationYml.get("computerNumber") + "\"\n" + "  serialNumber: \"sn12345577\"");
-			printWriter.flush();
-			printWriter.close();
-		}
-	}
 
 	/**
 	 * Method updateComputerNumber
@@ -486,15 +476,16 @@ public class ComputerMonitorization
 	 * @param computerMonitorizationYml
 	 * @throws ComputerError
 	 */
-	private void updateComputerNumber(String serialNumber) throws ComputerError
+	private void updateComputerNumber(String computerNumber) throws ComputerError
 	{
 		try
 		{
-			// ACTUALIZAMOS YAML
-			Map<String, String> computerMonitorizationYml = this.openMap();
-			log.info("PDATE COMPUTER NUMBER ID");
-			computerMonitorizationYml.put("computerNumber", serialNumber);
-			this.savingMonitorizationYmlCfg(computerMonitorizationYml);
+			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
+			
+			configuration.setComputerNumber(computerNumber);
+			
+			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
+
 		}
 		catch (Exception exception)
 		{
@@ -517,17 +508,113 @@ public class ComputerMonitorization
 	{
 		try
 		{
-			// ACTUALIZAMOS YAML
-			Map<String, String> computerMonitorizationYml = this.openMap();
-			log.info("UPDATE ANDALUCIA ID");
-			computerMonitorizationYml.put("andaluciaId", id);
-			this.savingMonitorizationYmlCfg(computerMonitorizationYml);
+			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
+			
+			configuration.setAndaluciaId(id);
+			
+			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
+
 		}
 		catch (Exception exception)
 		{
-			String error = "Error cambiando AndaluciaID";
+			String error = "Error cambiando ComputerNumber";
 			log.error(error, exception);
-			throw new ComputerError(1, error, exception);
+			throw new ComputerError(2, error, exception);
+		}
+	}
+
+	private void updateTeacher(String teacher) throws ComputerError
+	{
+		try
+		{
+			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
+			
+			configuration.setTeacher(teacher);
+			
+			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
+
+		}
+		catch (Exception exception)
+		{
+			String error = "Error cambiando ComputerNumber";
+			log.error(error, exception);
+			throw new ComputerError(2, error, exception);
+		}
+	}
+
+	private void updateTrolley(String trolley) throws ComputerError
+	{
+		try
+		{
+			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
+			
+			configuration.setTrolley(trolley);
+			
+			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
+
+		}
+		catch (Exception exception)
+		{
+			String error = "Error cambiando ComputerNumber";
+			log.error(error, exception);
+			throw new ComputerError(2, error, exception);
+		}
+	}
+
+	private void updateClassroom(String classroom) throws ComputerError
+	{
+		try
+		{
+			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
+			
+			configuration.setTrolley(classroom);
+			
+			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
+
+		}
+		catch (Exception exception)
+		{
+			String error = "Error cambiando ComputerNumber";
+			log.error(error, exception);
+			throw new ComputerError(2, error, exception);
+		}
+	}
+
+	private void updateFloor(String floor) throws ComputerError
+	{
+		try
+		{
+			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
+			
+			configuration.setFloor(Integer.valueOf(floor));
+			
+			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
+
+		}
+		catch (Exception exception)
+		{
+			String error = "Error cambiando ComputerNumber";
+			log.error(error, exception);
+			throw new ComputerError(2, error, exception);
+		}
+	}
+
+	private void updateAdmin(String admin) throws ComputerError
+	{
+		try
+		{
+			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
+			
+			configuration.setIsAdmin(Boolean.valueOf(admin));
+			
+			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
+
+		}
+		catch (Exception exception)
+		{
+			String error = "Error cambiando ComputerNumber";
+			log.error(error, exception);
+			throw new ComputerError(2, error, exception);
 		}
 	}
 
@@ -544,11 +631,12 @@ public class ComputerMonitorization
 	{
 		try
 		{
-			// ACTUALIZAMOS YAML
-			Map<String, String> computerMonitorizationYml = this.openMap();
-			log.info("UPDATE SERIAL NUMBER ID");
-			computerMonitorizationYml.put("serialNumber", serialNumber);
-			this.savingMonitorizationYmlCfg(computerMonitorizationYml);
+			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
+			
+			configuration.setComputerSerialNumber(serialNumber);
+			
+			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
+
 		}
 		catch (Exception exception)
 		{
@@ -558,35 +646,6 @@ public class ComputerMonitorization
 		}
 	}
 
-	/**
-	 * Method openMap
-	 * 
-	 * @return
-	 * @throws ComputerError
-	 */
-	private Map<String, String> openMap() throws ComputerError
-	{
-		try
-		{
-			// SACAMOS EL YAML
-			InputStream inputStream = new FileInputStream(new File("./src/main/resources/monitorization.yml"));
-
-			// OBJETO YAML
-			Yaml yaml = new Yaml();
-
-			// -- EL MAPA CON LA INFO ---
-			Map<String, Object> yamlMap = yaml.load(inputStream);
-
-			// RETORNAMOS EL MAPA CASTEADO
-			return (Map<String, String>) yamlMap.get("ComputerMonitorization");
-		}
-		catch (FileNotFoundException e)
-		{
-			String error = "Error configurando wifi";
-			log.error(error, e);
-			throw new ComputerError(2, error, e);
-		}
-	}
 
 	/**
 	 * this method make a screenshot and send it

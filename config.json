@@ -1,9 +1,1 @@
-{
-  "classroom" : "0.7",
-  "teacher" : "David",
-  "trolley" : "trolley1",
-  "andaluciaId" : "andaluciaId123",
-  "computerNumber" : "computerNumber12344",
-  "computerSerialNumber" : "5A59A1A8-079D-0000-0000-000000000000",
-  "isAdmin" : true
-}
+{"classroom":"0.7","teacher":"David","trolley":"trolley1","floor":null,"andaluciaId":"andaluciaId123","computerNumber":"69","computerSerialNumber":"5A59A1A8-079D-0000-0000-000000000000","isAdmin":true}
