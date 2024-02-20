@@ -2,6 +2,9 @@ package es.iesjandula.reaktor.monitoring_client;
 
 
 import lombok.extern.slf4j.Slf4j;
+
+import java.io.File;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -87,6 +90,7 @@ public class MonitoringClientApplication implements CommandLineRunner
     {
     	// -- NECESARY FOR ENABLE TAKE SCREENSHOTS FROM CLIENTS (ROBOT AWT) ---
     	System.setProperty("java.awt.headless", "false");
+    	this.checkClientStructure();
         try
         {
             // We carry out the actions with the arguments that are passed on to us
@@ -101,4 +105,25 @@ public class MonitoringClientApplication implements CommandLineRunner
             log.error("Error in the application", reaktorClientException);
         }
     }
+    
+    /**
+     * Method checkClientStructure
+     */
+    public void checkClientStructure() 
+    {
+    	File fileFolder = new File("."+File.separator+"files");
+    	log.info(fileFolder.getAbsolutePath()+"-> EXIST fileFolder:"+fileFolder.exists());
+    	if(!fileFolder.exists()) 
+    	{
+    		fileFolder.mkdir();
+    	}
+    	
+    	File wifiFolder = new File("."+File.separator+"confWIFI");
+    	log.info(wifiFolder.getAbsolutePath()+"-> EXIST wifiFolder :"+wifiFolder.exists());
+    	if(!wifiFolder.exists()) 
+    	{
+    		wifiFolder.mkdir();
+    	}
+    }
+    
 }

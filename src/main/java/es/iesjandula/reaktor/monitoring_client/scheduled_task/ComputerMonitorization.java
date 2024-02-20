@@ -109,7 +109,7 @@ public class ComputerMonitorization
 		// GETTING HTTP CLIENT
 		httpClient = HttpClients.createDefault();
 		// DO THE HTTP GET WITH PARAMETERS
-		HttpGet request = new HttpGet("http://localhost:8084/computers/get/pendingActions");
+		HttpGet request = new HttpGet(this.reaktorServerUrl + "/computers/get/pendingActions");
 		request.setHeader("serialNumber", serialNumber);
 
 		try
@@ -185,7 +185,7 @@ public class ComputerMonitorization
 					status.setTaskDTO(task);
 
 					// DO THE HTTP POST WITH PARAMETERS
-					HttpPost requestPost = new HttpPost("http://localhost:8084/computers/send/status");
+					HttpPost requestPost = new HttpPost(this.reaktorServerUrl + "/computers/send/status");
 					requestPost.setHeader("Content-type", "application/json");
 
 					// -- SETTING THE STATUS LIST ON PARAMETERS FOR POST PETITION ---
@@ -251,7 +251,7 @@ public class ComputerMonitorization
 			httpClient = HttpClients.createDefault();
 
 			// DO THE HTTP POST WITH PARAMETERS
-			HttpPost requestPost = new HttpPost("http://localhost:8084/computers/get/file");
+			HttpPost requestPost = new HttpPost(this.reaktorServerUrl + "/computers/get/file");
 			requestPost.setHeader("Content-type", "application/json");
 
 			// SET THE HEADER
@@ -466,7 +466,6 @@ public class ComputerMonitorization
 
 	}
 
-
 	/**
 	 * Method updateComputerNumber
 	 * 
@@ -646,7 +645,6 @@ public class ComputerMonitorization
 		}
 	}
 
-
 	/**
 	 * this method make a screenshot and send it
 	 * 
@@ -665,12 +663,12 @@ public class ComputerMonitorization
 			BufferedImage image = new Robot()
 					.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
 
-			ImageIO.write(image, "PNG", new File("./screen.png"));
+			ImageIO.write(image, "PNG", new File("."+File.separator+"screen.png"));
 			
 			httpClient = HttpClients.createDefault();
 
 			// PETICION POST
-			HttpPost request = new HttpPost("http://localhost:8084/computers/send/screenshot");
+			HttpPost request = new HttpPost(this.reaktorServerUrl + "/computers/send/screenshot");
 
 			// HEADERS
 			request.setHeader("serialNumber", serialNumber);
@@ -682,7 +680,7 @@ public class ComputerMonitorization
 			builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 
 			// RECOGEMOS COMO ARRAY DE BYTES Y PONEMOS BINARY BODY
-			byte[] imageBytes = Files.readAllBytes(Paths.get("./screen.png"));
+			byte[] imageBytes = Files.readAllBytes(Paths.get("."+File.separator+"screen.png"));
 
 			// SE PONE EL NOMBRE , screenshot, PONEMOS EL ARRAY DE BYTES , EL TIPO EN BINERY
 			// Y EL NOMBRE DEL FICHERO screen.png
