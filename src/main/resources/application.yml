@@ -6,5 +6,6 @@ server:
 reaktor:
   server:
     url: "http://localhost:8084/"
+  configFile: ".\\config.json"
   computerOnReport: 5_000
   malwareReport: 2_500

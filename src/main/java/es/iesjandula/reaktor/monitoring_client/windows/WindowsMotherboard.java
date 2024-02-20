@@ -131,6 +131,7 @@ public final class WindowsMotherboard
         motherboard.setIsAdmin(this.configuration.getIsAdmin());
         motherboard.setAndaluciaId(this.configuration.getAndaluciaId());
         motherboard.setComputerNumber(this.configuration.getComputerNumber());
+        motherboard.setFloor(this.configuration.getFloor());
     }
 
     /**
