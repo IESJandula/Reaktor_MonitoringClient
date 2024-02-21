@@ -30,6 +30,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -70,7 +71,7 @@ public class ComputerMonitorization
 	 */
 	@Value("${reaktor.server.url}")
 	private String reaktorServerUrl;
-	
+
 	/**
 	 * - Attribute - This attrubte Storage the information about of Server URL
 	 */
@@ -88,7 +89,7 @@ public class ComputerMonitorization
 		// -- UTILIZAMOS LA MISMA FORMA QUE LA PRIMERA ACTUALIZACION DEL PC , PARA
 		// VOLVER A ENVIAR PERIODICAMENTE ---
 		log.info("SENDING FULL INFO COMPUTER TO SERIALNUMBER -> "
-				+ this.reaktor.getMotherboard().getComputerSerialNumber());
+				+ this.reaktor.getMotherboard().getMotherBoardSerialNumber());
 		this.httpCommunicationSender.sendPost(
 				this.httpCommunicationSender.createHttpPostReaktor(this.reaktorServerUrl + "/reaktor", this.reaktor));
 	}
@@ -101,7 +102,7 @@ public class ComputerMonitorization
 	@Scheduled(fixedDelayString = "6000", initialDelay = 2000)
 	public void taskManager()
 	{
-		String serialNumber = this.reaktor.getMotherboard().getComputerSerialNumber();
+		String serialNumber = this.reaktor.getMotherboard().getMotherBoardSerialNumber();
 
 		// --- CLOSEABLE HTTP ---
 		CloseableHttpClient httpClient = null;
@@ -137,25 +138,24 @@ public class ComputerMonitorization
 					{
 						// EVALUAMOS SACANDO DE LA TASKDTO , EL NOMBRE DE LA TASK
 						// --- EVALUAMOS EL TIPO DE ACCION SEGUN SU NOMBRE ---
-						
-						
+
 						switch (task.getName())
 						{
 							case "updateAndaluciaId" -> this.updateAndaluciaId(task.getInfo());
 							case "updateComputerNumber" -> this.updateComputerNumber(task.getInfo());
 							case "updateSerialNumber" -> this.updateSerialNumber(task.getInfo());
-							
+
 							case "updateTeacher" -> this.updateTeacher(task.getInfo());
 							case "updateTrolley" -> this.updateTrolley(task.getInfo());
 							case "updateClassroom" -> this.updateClassroom(task.getInfo());
 							case "updateFloor" -> this.updateFloor(task.getInfo());
 							case "updateAdmin" -> this.updateAdmin(task.getInfo());
-							
+
 							case "screenshot" -> this.getAndSendScreenshot(task);
 							case "blockDisp" -> this.actionsBlockDisp(task.getInfo());
 							case "configWifi" -> this.actionsCfgWifiFile(task.getInfo(), task, serialNumber);
-							case "file" ->
-								this.downloadFile("./", task, this.reaktor.getMotherboard().getComputerSerialNumber());
+							case "file" -> this.downloadFile("./", task,
+									this.reaktor.getMotherboard().getMotherBoardSerialNumber());
 							case "command" -> this.executeCommand(task.getInfo(), task.getInfo());
 							default -> this.executeCommand(command, task.getInfo());
 						}
@@ -235,9 +235,9 @@ public class ComputerMonitorization
 	/**
 	 * Method that download a file
 	 * 
-	 * @param path
-	 * @param taskDTO
-	 * @param serialNumber
+	 * @param  path
+	 * @param  taskDTO
+	 * @param  serialNumber
 	 * @throws ComputerError
 	 */
 	private void downloadFile(String path, TaskDTO taskDTO, String serialNumber) throws ComputerError
@@ -360,8 +360,8 @@ public class ComputerMonitorization
 	/**
 	 * Method closeHttpClientResponse
 	 * 
-	 * @param httpClient
-	 * @param response
+	 * @param  httpClient
+	 * @param  response
 	 * @throws ReaktorClientException
 	 */
 	private void closeHttpClientResponse(CloseableHttpClient httpClient, CloseableHttpResponse response)
@@ -395,9 +395,9 @@ public class ComputerMonitorization
 	/**
 	 * Method actionsBlockDisp
 	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
+	 * @param  statusList
+	 * @param  serialNumber
+	 * @param  actionsToDo
 	 * @throws ComputerError
 	 */
 	private void actionsBlockDisp(String usbName) throws ComputerError
@@ -418,9 +418,9 @@ public class ComputerMonitorization
 	/**
 	 * Method actionsShutdown
 	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
+	 * @param  statusList
+	 * @param  serialNumber
+	 * @param  actionsToDo
 	 * @throws ReaktorClientException
 	 */
 	private void executeCommand(String command, String info) throws ComputerError
@@ -443,8 +443,8 @@ public class ComputerMonitorization
 	/**
 	 * Method actionsCfgWifiFile
 	 * 
-	 * @param statusList
-	 * @param actionsToDo
+	 * @param  statusList
+	 * @param  actionsToDo
 	 * @throws ComputerError
 	 */
 	private void actionsCfgWifiFile(String info, TaskDTO taskDTO, String serialNumber) throws ComputerError
@@ -469,10 +469,10 @@ public class ComputerMonitorization
 	/**
 	 * Method updateComputerNumber
 	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
-	 * @param computerMonitorizationYml
+	 * @param  statusList
+	 * @param  serialNumber
+	 * @param  actionsToDo
+	 * @param  computerMonitorizationYml
 	 * @throws ComputerError
 	 */
 	private void updateComputerNumber(String computerNumber) throws ComputerError
@@ -480,9 +480,9 @@ public class ComputerMonitorization
 		try
 		{
 			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
-			
+
 			configuration.setComputerNumber(computerNumber);
-			
+
 			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
 
 		}
@@ -497,10 +497,10 @@ public class ComputerMonitorization
 	/**
 	 * Method updateAndaluciaId
 	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
-	 * @param computerMonitorizationYml
+	 * @param  statusList
+	 * @param  serialNumber
+	 * @param  actionsToDo
+	 * @param  computerMonitorizationYml
 	 * @throws ComputerError
 	 */
 	private void updateAndaluciaId(String id) throws ComputerError
@@ -508,9 +508,9 @@ public class ComputerMonitorization
 		try
 		{
 			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
-			
+
 			configuration.setAndaluciaId(id);
-			
+
 			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
 
 		}
@@ -522,14 +522,19 @@ public class ComputerMonitorization
 		}
 	}
 
+	/**
+	 * Method updateTeacher
+	 * @param teacher
+	 * @throws ComputerError
+	 */
 	private void updateTeacher(String teacher) throws ComputerError
 	{
 		try
 		{
 			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
-			
+
 			configuration.setTeacher(teacher);
-			
+
 			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
 
 		}
@@ -541,14 +546,19 @@ public class ComputerMonitorization
 		}
 	}
 
+	/**
+	 * Method updateTrolley
+	 * @param trolley
+	 * @throws ComputerError
+	 */
 	private void updateTrolley(String trolley) throws ComputerError
 	{
 		try
 		{
 			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
-			
+
 			configuration.setTrolley(trolley);
-			
+
 			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
 
 		}
@@ -560,14 +570,19 @@ public class ComputerMonitorization
 		}
 	}
 
+	/**
+	 * Method updateClassroom
+	 * @param classroom
+	 * @throws ComputerError
+	 */
 	private void updateClassroom(String classroom) throws ComputerError
 	{
 		try
 		{
 			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
-			
+
 			configuration.setTrolley(classroom);
-			
+
 			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
 
 		}
@@ -579,14 +594,19 @@ public class ComputerMonitorization
 		}
 	}
 
+	/**
+	 * Method updateFloor
+	 * @param floor
+	 * @throws ComputerError
+	 */
 	private void updateFloor(String floor) throws ComputerError
 	{
 		try
 		{
 			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
-			
+
 			configuration.setFloor(Integer.valueOf(floor));
-			
+
 			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
 
 		}
@@ -598,14 +618,19 @@ public class ComputerMonitorization
 		}
 	}
 
+	/**
+	 * Method updateAdmin
+	 * @param admin
+	 * @throws ComputerError
+	 */
 	private void updateAdmin(String admin) throws ComputerError
 	{
 		try
 		{
 			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
-			
+
 			configuration.setIsAdmin(Boolean.valueOf(admin));
-			
+
 			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
 
 		}
@@ -620,10 +645,10 @@ public class ComputerMonitorization
 	/**
 	 * Method updateSerialNumber
 	 * 
-	 * @param statusList
-	 * @param serialNumber
-	 * @param actionsToDo
-	 * @param computerMonitorizationYml
+	 * @param  statusList
+	 * @param  serialNumber
+	 * @param  actionsToDo
+	 * @param  computerMonitorizationYml
 	 * @throws ComputerError
 	 */
 	private void updateSerialNumber(String serialNumber) throws ComputerError
@@ -631,9 +656,9 @@ public class ComputerMonitorization
 		try
 		{
 			Configuration configuration = new ObjectMapper().readValue(new File(this.fileConfig), Configuration.class);
-			
+
 			configuration.setComputerSerialNumber(serialNumber);
-			
+
 			new ObjectMapper().writeValue(new File(this.fileConfig), configuration);
 
 		}
@@ -653,18 +678,18 @@ public class ComputerMonitorization
 	public void getAndSendScreenshot(TaskDTO task) throws ReaktorClientException
 	{
 		// --- SACAMOS EL SERIALNUMBER Y DECLARAMOS VARIABLES ---
-		String serialNumber = this.reaktor.getMotherboard().getComputerSerialNumber();
+		String serialNumber = this.reaktor.getMotherboard().getMotherBoardSerialNumber();
 		CloseableHttpClient httpClient = null;
 		CloseableHttpResponse response = null;
 
 		try
 		{
-			
+
 			BufferedImage image = new Robot()
 					.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
 
-			ImageIO.write(image, "PNG", new File("."+File.separator+"screen.png"));
-			
+			ImageIO.write(image, "PNG", new File("." + File.separator + "screen.png"));
+
 			httpClient = HttpClients.createDefault();
 
 			// PETICION POST
@@ -680,7 +705,7 @@ public class ComputerMonitorization
 			builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 
 			// RECOGEMOS COMO ARRAY DE BYTES Y PONEMOS BINARY BODY
-			byte[] imageBytes = Files.readAllBytes(Paths.get("."+File.separator+"screen.png"));
+			byte[] imageBytes = Files.readAllBytes(Paths.get("." + File.separator + "screen.png"));
 
 			// SE PONE EL NOMBRE , screenshot, PONEMOS EL ARRAY DE BYTES , EL TIPO EN BINERY
 			// Y EL NOMBRE DEL FICHERO screen.png

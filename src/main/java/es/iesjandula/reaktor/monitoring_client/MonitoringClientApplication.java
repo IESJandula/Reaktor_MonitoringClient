@@ -1,9 +1,8 @@
 package es.iesjandula.reaktor.monitoring_client;
 
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.File;
+import java.net.URL;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +16,12 @@ import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 import es.iesjandula.reaktor.monitoring_client.utils.ActionsArguments;
 import es.iesjandula.reaktor.monitoring_client.utils.Constants;
 import es.iesjandula.reaktor.monitoring_client.utils.HttpCommunicationSender;
+import es.iesjandula.reaktor.monitoring_client.utils.ReaktorMonitoringServerException;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientException;
+import es.iesjandula.reaktor.monitoring_client.utils.resources_handler.ResourcesHandler;
+import es.iesjandula.reaktor.monitoring_client.utils.resources_handler.ResourcesHandlerFile;
+import es.iesjandula.reaktor.monitoring_client.utils.resources_handler.ResourcesHandlerJar;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * - CLASS -
@@ -90,7 +94,8 @@ public class MonitoringClientApplication implements CommandLineRunner
     {
     	// -- NECESARY FOR ENABLE TAKE SCREENSHOTS FROM CLIENTS (ROBOT AWT) ---
     	System.setProperty("java.awt.headless", "false");
-    	this.checkClientStructure();
+    	this.copyTemplatesFolderToDestinationFolder();
+    	//this.checkClientStructure();
         try
         {
             // We carry out the actions with the arguments that are passed on to us
@@ -125,5 +130,49 @@ public class MonitoringClientApplication implements CommandLineRunner
     		wifiFolder.mkdir();
     	}
     }
+    
+	/**
+	 * Este método se encarga de copiar toda la estructura de carpetas a un lugar común
+	 * ya sea en el entorno de desarrollo o ejecutando JAR
+	 * @throws ReaktorMonitoringServerException con una excepción
+	 */
+	public void copyTemplatesFolderToDestinationFolder() throws ReaktorMonitoringServerException
+	{
+		// Esta es la carpeta con las subcarpetas y configuraciones
+	    ResourcesHandler reaktorConfigFolder = this.getResourcesHandler(Constants.REAKTOR_CONFIG);
+	    if (reaktorConfigFolder != null)
+	    {
+	      // Nombre de la carpeta destino
+	      File destinationFolder = new File(Constants.REAKTOR_CONFIG_EXEC);
+	      
+	      // Copiamos las plantillas (origen) al destino
+	      reaktorConfigFolder.copyToDirectory(destinationFolder);
+	    } 
+	  }
+	
+	/**
+	 * 
+	 * @param resourceFilePath con la carpeta origen que tiene las plantillas
+	 * @return el manejador que crea la estructura
+	 */
+	private ResourcesHandler getResourcesHandler(String resourceFilePath)
+	{
+		ResourcesHandler outcome = null;
+
+		URL baseDirSubfolderUrl = Thread.currentThread().getContextClassLoader().getResource(resourceFilePath);
+		if (baseDirSubfolderUrl != null)
+		{
+			if (baseDirSubfolderUrl.getProtocol().equalsIgnoreCase("file"))
+			{
+				outcome = new ResourcesHandlerFile(baseDirSubfolderUrl);
+			}
+			else
+			{
+				outcome = new ResourcesHandlerJar(baseDirSubfolderUrl);
+			}
+		}
+		
+		return outcome;
+	}
     
 }

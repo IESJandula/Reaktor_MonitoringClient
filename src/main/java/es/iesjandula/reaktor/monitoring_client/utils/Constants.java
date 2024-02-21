@@ -1,5 +1,6 @@
 package es.iesjandula.reaktor.monitoring_client.utils;
 
+import java.io.File;
 import java.util.UUID;
 
 /**
@@ -8,6 +9,18 @@ import java.util.UUID;
  */
 public final class Constants
 {
+	
+	public static String FILE_FOLDER = "files" + File.separator;
+	
+	
+	public static final String REAKTOR_CONFIG = "reaktor_config";
+	public static final String REAKTOR_CONFIG_EXEC = "reaktor_config_exec";
+	public static final String REAKTOR_CONFIG_EXEC_CONF_WIFI = REAKTOR_CONFIG_EXEC + File.separator + "confWIFI";
+	public static final String REAKTOR_CONFIG_EXEC_FILES = REAKTOR_CONFIG_EXEC + File.separator + "files";
+	public static final String REAKTOR_CONFIG_EXEC_SCREENSHOTS = REAKTOR_CONFIG_EXEC + File.separator + "screenshots";
+	public static final String REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS = REAKTOR_CONFIG_EXEC + File.separator + "webScreenshots";
+	public static final String REAKTOR_CONFIG_EXEC_ACTIONS_CSV = REAKTOR_CONFIG_EXEC + File.separator + "actionsCSV.csv";
+	
     /**
      * - COMMONS CONSTANTS -
      * This variable is used to store the commons constants of the application

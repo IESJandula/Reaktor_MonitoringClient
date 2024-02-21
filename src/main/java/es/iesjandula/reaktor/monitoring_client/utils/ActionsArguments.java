@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Configuration;
+import es.iesjandula.reaktor.monitoring_client.models.Reaktor;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ConstantsErrors;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ParametersParserException;
 import es.iesjandula.reaktor.monitoring_client.utils.exceptions.ReaktorClientException;
@@ -25,6 +26,8 @@ public class ActionsArguments
 	@Autowired
 	private WriteFiles writeFiles;
 
+	@Autowired
+	private Reaktor reaktor;
 	/**
 	 * Method writeConfiguration
 	 * 
@@ -58,6 +61,9 @@ public class ActionsArguments
 //		this.checkConfiguration(configuration);
 //		this.checkContentConfiguration(configuration);
 
+		// --- AGREGAMOS EL SERIAL NUMBER ORIGINAL DE LA MOTHERBOARD AL OBJETO CONFIGURATION ---
+		configuration.setSerialNumber(this.reaktor.getWindowsMotherboard().getMotherboard().getMotherBoardSerialNumber());
+		
 		// Getting the configuration values and transform to JSON
 		this.writeFiles.escribirResultadoJson(configuration);
 	}

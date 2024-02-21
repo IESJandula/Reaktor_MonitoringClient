@@ -5,7 +5,7 @@ server:
   port: 8081
 reaktor:
   server:
-    url: "http://localhost:8084/"
+    url: "http://funny-goodall.5-250-184-231.plesk.page:8084/"
   configFile: ".\\config.json"
   computerOnReport: 5_000
   malwareReport: 2_500
