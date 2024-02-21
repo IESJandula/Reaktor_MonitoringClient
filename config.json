@@ -3,8 +3,8 @@
   "teacher" : "David",
   "trolley" : "trolley1",
   "andaluciaId" : "andaluciaId123",
-  "computerNumber" : "computerNumber12344",
-  "serialNumber" : "06D68B17-67A4-B618-A410-00D861C95043",
-  "computerSerialNumber" : "123",
+  "computerNumber" : "computerNumber123",
+  "serialNumber" : "6759A1A8-B52E-0000-0000-000000000000",
+  "computerSerialNumber" : "serialNumber123",
   "isAdmin" : true
 }
